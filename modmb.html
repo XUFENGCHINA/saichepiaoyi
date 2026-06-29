@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>漂移赛车 · 模组生成器</title>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-bg-strong: rgba(255, 255, 255, 0.14);
+            --glass-bg-panel: rgba(18, 22, 35, 0.88);
+            --glass-border: rgba(255, 255, 255, 0.16);
+            --glass-border-strong: rgba(255, 255, 255, 0.28);
+            --glass-blur: blur(18px);
+            --radius-sm: 10px;
+            --radius: 16px;
+            --radius-lg: 22px;
+            --radius-full: 999px;
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.78);
+            --accent: #007aff;
+            --accent-warm: #ff9f0a;
+            --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+            --transition-fast: 0.15s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: radial-gradient(ellipse at center, #1a1d2e 0%, #0a0c18 100%);
+            font-family: var(--font-system);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 玻璃卡片 */
+        .glass-card {
+            background: var(--glass-bg-panel);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            box-shadow: var(--shadow-glass);
+            transition: all var(--transition-fast);
+        }
+        .glass-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+        .glass-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 14px 0 8px;
+            color: var(--text-secondary);
+        }
+
+        /* 表单行 */
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .form-row label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            min-width: 70px;
+            color: var(--text-secondary);
+        }
+        .form-row input,
+        .form-row select,
+        .form-row textarea {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            outline: none;
+            font-family: var(--font-system);
+            transition: border-color var(--transition-fast);
+        }
+        .form-row input:focus,
+        .form-row select:focus,
+        .form-row textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+        }
+        .form-row textarea {
+            resize: vertical;
+            min-height: 70px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        .form-row.checkbox {
+            justify-content: flex-start;
+            gap: 6px;
+        }
+        .form-row.checkbox input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        /* 按钮 */
+        .btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+            transition: all var(--transition-fast);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--accent-warm);
+            border-color: var(--accent-warm);
+            color: #000;
+            font-weight: 700;
+        }
+        .btn-primary:hover {
+            background: #ffb624;
+        }
+        .btn-small {
+            padding: 4px 12px;
+            font-size: 0.7rem;
+        }
+        .btn-block {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:active {
+            transform: scale(0.96);
+            opacity: 0.85;
+        }
+
+        /* 车辆列表 */
+        .car-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .car-item .car-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .car-item .remove-btn {
+            background: none;
+            border: none;
+            color: #ff453a;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0 6px;
+        }
+
+        /* 提示词区域 */
+        .prompt-box {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            word-break: break-word;
+            position: relative;
+        }
+        .prompt-box code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        .export-area {
+            margin-top: 14px;
+        }
+        .export-area textarea {
+            width: 100%;
+            height: 140px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius-sm);
+            color: #fff;
+            font-family: monospace;
+            font-size: 0.75rem;
+            padding: 10px;
+            resize: vertical;
+        }
+        hr {
+            border: 0.5px solid rgba(255,255,255,0.1);
+            margin: 16px 0;
+        }
+        .flex-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 标题 -->
+    <div class="glass-card">
+        <h2>🏁 漂移赛车 · 模组生成器</h2>
+        <p style="font-size:0.85rem;opacity:0.8;">快速创建自定义赛车、地图、障碍物，导出为游戏可加载的模组文件。</p>
+    </div>
+
+    <!-- 车辆管理 -->
+    <div class="glass-card" id="carsSection">
+        <h2>🚗 自定义车辆</h2>
+        <div id="carsList"></div>
+        <button class="btn btn-primary btn-block" id="addCarBtn">➕ 添加新车辆</button>
+    </div>
+
+    <!-- 地图 & 其他 -->
+    <div class="glass-card">
+        <h2>🗺️ 地图 & 扩展</h2>
+        <div class="form-row">
+            <label>新增地图名</label>
+            <input type="text" id="newMapName" placeholder="例如：沙漠、城市">
+            <button class="btn" id="addMapBtn">添加</button>
+        </div>
+        <div id="mapsTags" class="flex-row" style="margin-top:8px;"></div>
+        <hr>
+        <div class="form-row checkbox">
+            <input type="checkbox" id="showReverseBtn">
+            <label for="showReverseBtn">显示倒车按钮</label>
+        </div>
+        <div class="form-row checkbox">
+            <input type="checkbox" id="enableTankSpikes">
+            <label for="enableTankSpikes">启用坦克路钉 (坦克模式)</label>
+        </div>
+        <div class="form-row">
+            <label>天气</label>
+            <select id="weatherSelect">
+                <option value="sunny">☀️ 晴天</option>
+                <option value="rain">🌧️ 雨天</option>
+                <option value="fog">🌫️ 雾天</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 障碍物 -->
+    <div class="glass-card">
+        <h2>🧱 自定义障碍物</h2>
+        <div class="form-row">
+            <label>名称</label>
+            <input type="text" id="obstacleName" placeholder="障碍物标识">
+        </div>
+        <div class="form-row">
+            <label>宽x高</label>
+            <input type="number" id="obstacleW" placeholder="宽" style="width:70px;" value="30">
+            <span>x</span>
+            <input type="number" id="obstacleH" placeholder="高" style="width:70px;" value="30">
+        </div>
+        <div class="form-row">
+            <label>颜色</label>
+            <input type="color" id="obstacleColor" value="#e74c3c">
+        </div>
+        <div class="form-row checkbox">
+            <input type="checkbox" id="obstacleExplode">
+            <label for="obstacleExplode">碰撞爆炸</label>
+        </div>
+        <div class="form-row">
+            <label>伤害</label>
+            <input type="number" id="obstacleDamage" value="100">
+        </div>
+        <button class="btn btn-primary btn-block" id="addObstacleBtn">➕ 添加障碍物</button>
+        <div id="obstaclesList" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- AI 提示词区域 -->
+    <div class="glass-card">
+        <h2>🤖 AI 模组提示词</h2>
+        <p style="font-size:0.8rem; opacity:0.7;">用于生成像素车或障碍物数据（可导入到上方表单）</p>
+        <div class="prompt-box" id="aiPromptCar">
+            <span class="copy-btn" onclick="copyPrompt('aiPromptCar')">📋 复制</span>
+            <strong>🎨 像素赛车提示词：</strong><br>
+            <code id="carPromptText">
+A tiny pixel art sports car, side view, 16x24 pixels, bright red body with dark windows and yellow headlights, sharp aerodynamic shape, racing stripe, game asset style, pure pixel art with no background, each pixel clearly defined. Output as a 2D array of hex colors (e.g., ["#FF0000", null, ...]) where null is transparent. Use 6px per pixel.
+            </code>
+        </div>
+        <div class="prompt-box" style="margin-top:12px;" id="aiPromptObstacle">
+            <span class="copy-btn" onclick="copyPrompt('aiPromptObstacle')">📋 复制</span>
+            <strong>🧱 像素障碍物提示词：</strong><br>
+            <code id="obstaclePromptText">
+A pixel art oil barrel, 12x16 pixels, rusted metal with orange and brown colors, small highlight, game asset, transparent background, output as 2D array of hex colors (null for transparent). Pixel size 4px.
+            </code>
+        </div>
+    </div>
+
+    <!-- 导出区域 -->
+    <div class="glass-card">
+        <h2>📦 导出模组文件</h2>
+        <button class="btn btn-primary btn-block" id="generateModBtn">✨ 生成模组 JSON</button>
+        <div class="export-area">
+            <textarea id="modOutput" readonly placeholder="点击生成后，此处显示模组内容..."></textarea>
+        </div>
+        <button class="btn btn-block" id="downloadModBtn" style="margin-top:8px;">💾 下载 .txt 文件</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // 数据存储
+        let customCars = [];
+        let customMaps = [];
+        let customObstacles = [];
+
+        // 渲染车辆列表
+        function renderCars() {
+            const container = document.getElementById('carsList');
+            container.innerHTML = customCars.map((car, idx) => `
+                <div class="car-item">
+                    <div class="car-header">
+                        <span>${car.name || '未命名'} ${car.isTank ? '🔫坦克' : '🏎️赛车'}</span>
+                        <button class="remove-btn" onclick="removeCar(${idx})">✕</button>
+                    </div>
+                    <div class="form-row" style="margin-top:8px;">
+                        <label>名称</label>
+                        <input type="text" value="${car.name || ''}" onchange="updateCar(${idx},'name',this.value)">
+                    </div>
+                    <div class="form-row">
+                        <label>极速</label>
+                        <input type="number" value="${car.baseMaxSpeed || 35}" onchange="updateCar(${idx},'baseMaxSpeed',parseInt(this.value))">
+                    </div>
+                    <div class="form-row">
+                        <label>颜色</label>
+                        <input type="color" value="${car.color || '#ff7f00'}" onchange="updateCar(${idx},'color',this.value)">
+                    </div>
+                    <div class="form-row checkbox">
+                        <input type="checkbox" ${car.isTank ? 'checked' : ''} onchange="updateCar(${idx},'isTank',this.checked)">
+                        <label>坦克模式</label>
+                    </div>
+                    <div class="form-row">
+                        <label>生命值</label>
+                        <input type="number" value="${car.maxHp || 100}" onchange="updateCar(${idx},'maxHp',parseInt(this.value))">
+                    </div>
+                    <div class="form-row">
+                        <label>像素数据 (JSON数组)</label>
+                        <textarea onchange="updateCar(${idx},'pixelData',this.value)">${car.pixelData ? JSON.stringify(car.pixelData) : ''}</textarea>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.removeCar = (idx) => {
+            customCars.splice(idx, 1);
+            renderCars();
+        };
+        window.updateCar = (idx, key, value) => {
+            if (key === 'pixelData' && value) {
+                try { customCars[idx][key] = JSON.parse(value); } catch(e) { customCars[idx][key] = value; }
+            } else {
+                customCars[idx][key] = value;
+            }
+        };
+
+        // 添加车辆
+        document.getElementById('addCarBtn').addEventListener('click', () => {
+            customCars.push({
+                name: '自定义车' + (customCars.length+1),
+                baseMaxSpeed: 35,
+                color: '#ff7f00',
+                dark: '#cc5500',
+                accent: '#ffd700',
+                accelFactor: 1.0,
+                isTank: false,
+                hp: 100,
+                maxHp: 100,
+                pixelData: null
+            });
+            renderCars();
+        });
+
+        // 地图管理
+        function renderMaps() {
+            const tagsDiv = document.getElementById('mapsTags');
+            tagsDiv.innerHTML = customMaps.map((m, idx) => `
+                <span style="background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:20px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+                    ${m} <button onclick="removeMap(${idx})" style="background:none;border:none;color:#ff453a;cursor:pointer;font-size:1rem;">×</button>
+                </span>
+            `).join('');
+        }
+        window.removeMap = (idx) => {
+            customMaps.splice(idx, 1);
+            renderMaps();
+        };
+        document.getElementById('addMapBtn').addEventListener('click', () => {
+            const input = document.getElementById('newMapName');
+            const name = input.value.trim();
+            if (name && !customMaps.includes(name)) {
+                customMaps.push(name);
+                renderMaps();
+                input.value = '';
+            }
+        });
+
+        // 障碍物管理
+        function renderObstacles() {
+            const list = document.getElementById('obstaclesList');
+            list.innerHTML = customObstacles.map((ob, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:6px 10px; border-radius:8px; margin-bottom:4px;">
+                    <span>${ob.name || '障碍物'} (${ob.width}x${ob.height})</span>
+                    <button onclick="removeObstacle(${idx})" style="background:none;border:none;color:#ff453a;cursor:pointer;">✕</button>
+                </div>
+            `).join('');
+        }
+        window.removeObstacle = (idx) => {
+            customObstacles.splice(idx, 1);
+            renderObstacles();
+        };
+        document.getElementById('addObstacleBtn').addEventListener('click', () => {
+            const name = document.getElementById('obstacleName').value || '障碍物';
+            const w = parseInt(document.getElementById('obstacleW').value) || 30;
+            const h = parseInt(document.getElementById('obstacleH').value) || 30;
+            const color = document.getElementById('obstacleColor').value;
+            const explode = document.getElementById('obstacleExplode').checked;
+            const damage = parseInt(document.getElementById('obstacleDamage').value) || 0;
+            customObstacles.push({
+                name, width: w, height: h, color, explode, damage,
+                solid: true, visible: true, movable: false
+            });
+            renderObstacles();
+        });
+
+        // 生成模组JSON
+        document.getElementById('generateModBtn').addEventListener('click', () => {
+            const mod = {};
+            if (customCars.length > 0) mod.cars = customCars.map(c => ({
+                name: c.name,
+                baseMaxSpeed: c.baseMaxSpeed,
+                color: c.color,
+                dark: c.dark || '#333',
+                accent: c.accent || '#fff',
+                accelFactor: c.accelFactor || 1.0,
+                isTank: c.isTank || false,
+                hp: c.maxHp || 100,
+                maxHp: c.maxHp || 100,
+                pixelData: (typeof c.pixelData === 'string' ? JSON.parse(c.pixelData) : c.pixelData) || null,
+                shellDamage: c.shellDamage || 100,
+                shellRadius: c.shellRadius || 120,
+                shellCooldown: c.shellCooldown || 600
+            }));
+            if (customMaps.length > 0) mod.maps = customMaps;
+            if (customObstacles.length > 0) mod.obstacles = customObstacles;
+            if (document.getElementById('showReverseBtn').checked) mod.showReverseButton = true;
+            if (document.getElementById('enableTankSpikes').checked) mod.enableTankSpikes = true;
+            mod.weather = document.getElementById('weatherSelect').value;
+
+            document.getElementById('modOutput').value = JSON.stringify(mod, null, 2);
+        });
+
+        // 下载txt
+        document.getElementById('downloadModBtn').addEventListener('click', () => {
+            const content = document.getElementById('modOutput').value;
+            if (!content) return alert('请先生成模组内容');
+            const blob = new Blob([content], {type: 'text/plain'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'drift_mod.txt';
+            a.click();
+        });
+
+        // 复制提示词
+        window.copyPrompt = (id) => {
+            const text = document.getElementById(id).querySelector('code').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('提示词已复制到剪贴板！');
+            });
+        };
+
+        // 初始化
+        renderCars();
+        renderMaps();
+        renderObstacles();
+    })();
+</script>
+</body>
+</html>
