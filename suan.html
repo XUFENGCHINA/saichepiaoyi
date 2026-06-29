@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>果冻计算器 · 科学绘图版</title>
+  <style>
+    :root {
+      --bg-deep: #0a0a1a;
+      --card-bg: rgba(14, 14, 35, 0.95);
+      --display-bg: rgba(8, 8, 22, 0.85);
+      --btn-number: rgba(45, 45, 85, 0.75);
+      --btn-number-hover: rgba(60, 60, 105, 0.85);
+      --btn-func: rgba(35, 35, 65, 0.75);
+      --btn-func-hover: rgba(50, 50, 85, 0.85);
+      --btn-operator: #ff6b4a;
+      --btn-operator-hover: #ff8a6a;
+      --btn-operator-active: #ff3b1f;
+      --btn-equals: #ff3366;
+      --btn-equals-hover: #ff5c8a;
+      --btn-science: #3a3a6a;
+      --btn-science-hover: #4f4f85;
+      --text-primary: #ffffff;
+      --text-secondary: #b0b0d0;
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --shadow-btn: 0 6px 18px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+      --shadow-btn-pressed: 0 2px 6px rgba(0, 0, 0, 0.5);
+      --radius-btn: 20px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a0a1a;
+    }
+
+    body {
+      font-family: 'SF Pro Display', 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 30% 20%, rgba(255, 90, 120, 0.12) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(80, 120, 255, 0.1) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 50%, rgba(255, 180, 70, 0.08) 0%, transparent 60%),
+                  #0a0a1a;
+    }
+
+    /* 全屏容器：移动端占满，电脑端变为居中卡片 */
+    .calculator {
+      position: relative;
+      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: var(--card-bg);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px;
+      gap: 12px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1);
+    }
+
+    .calculator::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 20%, rgba(255, 90, 120, 0.12) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(80, 120, 255, 0.1) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 50%, rgba(255, 180, 70, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* 电脑端样式：宽度限制，圆角卡片，阴影 */
+    @media (min-width: 768px) {
+      .calculator {
+        width: 420px;
+        height: auto;
+        max-height: 90vh;
+        margin: 0 auto;
+        border-radius: 36px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+        padding: 24px 20px 20px;
+        gap: 14px;
+      }
+      .calculator::before {
+        border-radius: 36px;
+      }
+      .display {
+        min-height: 100px;
+        padding: 20px 20px 16px;
+      }
+      .display .result {
+        font-size: 2.8rem;
+      }
+      .btn {
+        font-size: 1.4rem;
+        border-radius: 22px;
+      }
+      .btn-operator {
+        font-size: 1.6rem;
+      }
+      .btn-equals {
+        font-size: 1.8rem;
+      }
+      .science-btn {
+        padding: 12px 4px;
+        font-size: 1rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .calculator {
+        width: 440px;
+      }
+      .btn {
+        font-size: 1.5rem;
+      }
+    }
+
+    .calculator.card-bounce {
+      animation: cardJellyBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cardJellyBounce {
+      0% { transform: scale(1); }
+      25% { transform: scale(0.98); }
+      50% { transform: scale(1.015); }
+      70% { transform: scale(0.99); }
+      100% { transform: scale(1); }
+    }
+
+    /* 显示屏 */
+    .display {
+      position: relative;
+      z-index: 2;
+      background: var(--display-bg);
+      border-radius: 20px;
+      padding: 20px 20px 16px;
+      text-align: right;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 4px;
+      box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .display .expression {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      min-height: 20px;
+      word-break: break-all;
+    }
+
+    .display .result {
+      font-size: 2.8rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -1px;
+      font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
+      line-height: 1.2;
+      text-shadow: 0 0 18px rgba(255, 255, 255, 0.3);
+    }
+
+    .display .result.bounce-in {
+      animation: displayBounceIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes displayBounceIn {
+      0% { transform: scale(1.3); opacity: 0.3; filter: blur(6px); }
+      40% { transform: scale(0.88); opacity: 1; filter: blur(0); }
+      65% { transform: scale(1.07); }
+      85% { transform: scale(0.96); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .display .result.big-bounce {
+      animation: displayBigBounce 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes displayBigBounce {
+      0% { transform: scale(1.4); opacity: 0; filter: blur(10px); }
+      30% { transform: scale(0.8); opacity: 1; filter: blur(0); }
+      55% { transform: scale(1.12); }
+      75% { transform: scale(0.93); }
+      90% { transform: scale(1.04); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .display.glow-pulse {
+      animation: displayGlow 0.7s ease-out;
+    }
+
+    @keyframes displayGlow {
+      0% { box-shadow: inset 0 4px 15px rgba(0,0,0,0.5), 0 0 40px rgba(255, 90, 120, 0.6); }
+      100% { box-shadow: inset 0 4px 15px rgba(0,0,0,0.5), 0 0 0px rgba(255,90,120,0); }
+    }
+
+    /* 科学常数行 */
+    .science-row {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .science-btn {
+      flex: 1;
+      background: var(--btn-science);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 12px 4px;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      box-shadow: var(--shadow-btn);
+      transition: transform 0.15s, box-shadow 0.15s, background 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.5px;
+    }
+
+    .science-btn:active {
+      transform: scale(0.92);
+      box-shadow: var(--shadow-btn-pressed);
+    }
+
+    .science-btn:hover {
+      background: var(--btn-science-hover);
+    }
+
+    .science-btn.jelly-pop {
+      animation: jellyPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* 主按钮网格 */
+    .buttons-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      flex: 1;
+      align-content: center;
+    }
+
+    .btn {
+      position: relative;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      aspect-ratio: 1 / 1;
+      color: #fff;
+      background: var(--btn-number);
+      transition: transform 0.15s, box-shadow 0.15s, background 0.3s;
+      box-shadow: var(--shadow-btn);
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .btn[data-value="0"] {
+      aspect-ratio: auto;
+      grid-column: span 2;
+    }
+
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.5); }
+    .btn:active { transform: scale(0.9); box-shadow: var(--shadow-btn-pressed); }
+
+    .btn-number { background: var(--btn-number); }
+    .btn-number:hover { background: var(--btn-number-hover); }
+
+    .btn-func { background: var(--btn-func); font-size: 1.1rem; font-weight: 600; }
+    .btn-func:hover { background: var(--btn-func-hover); }
+
+    .btn-operator { background: var(--btn-operator); font-size: 1.8rem; font-weight: 700; }
+    .btn-operator:hover { background: var(--btn-operator-hover); }
+    .btn-operator.active-operator {
+      background: var(--btn-operator-active);
+      box-shadow: 0 0 25px rgba(255, 60, 30, 0.7);
+      animation: operatorGlow 1.8s ease-in-out infinite;
+    }
+    @keyframes operatorGlow {
+      0%,100%{ box-shadow: 0 0 20px rgba(255,70,40,0.5); }
+      50%{ box-shadow: 0 0 35px rgba(255,100,70,0.8); }
+    }
+
+    .btn-equals { background: var(--btn-equals); font-size: 2rem; box-shadow: 0 8px 28px rgba(255,51,102,0.5); }
+    .btn-equals:hover { background: var(--btn-equals-hover); transform: translateY(-4px); }
+    .btn-equals:active { transform: scale(0.88); }
+
+    .btn.jelly-pop { animation: jellyPop 0.38s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes jellyPop {
+      0%{transform:scale(1);border-radius:var(--radius-btn);}
+      22%{transform:scale(0.8);border-radius:28px;}
+      48%{transform:scale(1.1);border-radius:16px;}
+      70%{transform:scale(0.94);border-radius:22px;}
+      88%{transform:scale(1.03);border-radius:18px;}
+      100%{transform:scale(1);border-radius:var(--radius-btn);}
+    }
+
+    .btn.jelly-pop-big { animation: jellyPopBig 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes jellyPopBig {
+      0%{transform:scale(1);border-radius:var(--radius-btn);}
+      18%{transform:scale(0.72);border-radius:32px;}
+      42%{transform:scale(1.16);border-radius:14px;}
+      62%{transform:scale(0.88);border-radius:24px;}
+      80%{transform:scale(1.05);border-radius:16px;}
+      92%{transform:scale(0.96);border-radius:20px;}
+      100%{transform:scale(1);border-radius:var(--radius-btn);}
+    }
+
+    .btn.jelly-pop-small { animation: jellyPopSmall 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes jellyPopSmall {
+      0%{transform:scale(1);} 30%{transform:scale(0.86);} 55%{transform:scale(1.06);} 78%{transform:scale(0.96);} 100%{transform:scale(1);}
+    }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transform: scale(0);
+      pointer-events: none;
+      animation: rippleEffect 0.6s ease-out forwards;
+      z-index: 0;
+    }
+    @keyframes rippleEffect { to { transform: scale(5); opacity: 0; } }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 2;
+      animation: particleBurst 0.75s ease-out forwards;
+    }
+    @keyframes particleBurst {
+      0% { transform: translate(0,0) scale(1); opacity:1; }
+      100% { transform: translate(var(--px), var(--py)) scale(0); opacity:0; }
+    }
+
+    /* 绘图模态框 */
+    .graph-modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .graph-modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .graph-panel {
+      background: rgba(25, 25, 55, 0.9);
+      border-radius: 28px;
+      padding: 20px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .graph-panel input {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 1.2rem;
+      color: white;
+      outline: none;
+      font-family: 'SF Mono', monospace;
+    }
+    .graph-panel input::placeholder { color: rgba(255,255,255,0.5); }
+    .graph-canvas {
+      width: 100%;
+      height: 200px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 16px;
+      display: block;
+    }
+    .graph-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .graph-actions button {
+      background: var(--btn-science);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .graph-actions button.primary {
+      background: var(--btn-equals);
+    }
+    .graph-actions button:active { transform: scale(0.95); }
+
+    @media (max-width: 400px) {
+      .btn { font-size: 1.3rem; }
+      .btn-operator { font-size: 1.5rem; }
+      .btn-equals { font-size: 1.7rem; }
+      .display .result { font-size: 2.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator" id="calculator">
+    <div class="display" id="display">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">0</div>
+    </div>
+
+    <!-- 科学按钮行 -->
+    <div class="science-row">
+      <button class="science-btn" data-action="constant" data-value="pi">π</button>
+      <button class="science-btn" data-action="constant" data-value="e">e</button>
+      <button class="science-btn" data-action="sqrt">√</button>
+      <button class="science-btn" data-action="graph" id="graphBtn">📈 函数</button>
+    </div>
+
+    <div class="buttons-grid">
+      <button class="btn btn-func" data-action="clear">AC</button>
+      <button class="btn btn-func" data-action="toggle-sign">+/−</button>
+      <button class="btn btn-func" data-action="percent">%</button>
+      <button class="btn btn-operator" data-action="operator" data-value="÷">÷</button>
+
+      <button class="btn btn-number" data-action="number" data-value="7">7</button>
+      <button class="btn btn-number" data-action="number" data-value="8">8</button>
+      <button class="btn btn-number" data-action="number" data-value="9">9</button>
+      <button class="btn btn-operator" data-action="operator" data-value="×">×</button>
+
+      <button class="btn btn-number" data-action="number" data-value="4">4</button>
+      <button class="btn btn-number" data-action="number" data-value="5">5</button>
+      <button class="btn btn-number" data-action="number" data-value="6">6</button>
+      <button class="btn btn-operator" data-action="operator" data-value="−">−</button>
+
+      <button class="btn btn-number" data-action="number" data-value="1">1</button>
+      <button class="btn btn-number" data-action="number" data-value="2">2</button>
+      <button class="btn btn-number" data-action="number" data-value="3">3</button>
+      <button class="btn btn-operator" data-action="operator" data-value="+">+</button>
+
+      <button class="btn btn-number" data-action="number" data-value="0">0</button>
+      <button class="btn btn-number" data-action="decimal" data-value=".">.</button>
+      <button class="btn btn-equals" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <!-- 绘图模态框 -->
+  <div class="graph-modal" id="graphModal">
+    <div class="graph-panel">
+      <input type="text" id="funcInput" placeholder="例如: sin(x)" value="sin(x)">
+      <canvas class="graph-canvas" id="graphCanvas" width="400" height="200"></canvas>
+      <div class="graph-actions">
+        <button id="closeGraphBtn">关闭</button>
+        <button id="drawGraphBtn" class="primary">绘制</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ========== 计算器核心 ==========
+      const calculator = document.getElementById('calculator');
+      const display = document.getElementById('display');
+      const expressionEl = document.getElementById('expression');
+      const resultEl = document.getElementById('result');
+      const graphBtn = document.getElementById('graphBtn');
+      const graphModal = document.getElementById('graphModal');
+      const funcInput = document.getElementById('funcInput');
+      const graphCanvas = document.getElementById('graphCanvas');
+      const drawGraphBtn = document.getElementById('drawGraphBtn');
+      const closeGraphBtn = document.getElementById('closeGraphBtn');
+
+      let currentInput = '0';
+      let previousInput = '';
+      let operator = null;
+      let shouldResetDisplay = false;
+      let lastResult = null;
+      let expressionText = '';
+      let justEvaluated = false;
+
+      updateDisplay('0', '');
+
+      function updateDisplay(value, expr) {
+        let displayValue = value;
+        if (value.length > 12 && !value.includes('e')) {
+          const num = parseFloat(value);
+          if (!isNaN(num)) {
+            if (Math.abs(num) >= 1e12 || (Math.abs(num) < 0.0001 && num !== 0)) displayValue = num.toExponential(6);
+            else if (value.includes('.')) {
+              const parts = value.split('.');
+              displayValue = parts[0].length > 10 ? num.toExponential(6) : value.slice(0, 12);
+            } else if (value.length > 12) displayValue = num.toExponential(6);
+          }
+        }
+        resultEl.textContent = displayValue;
+        expressionEl.textContent = expr;
+      }
+
+      // 事件委托
+      document.querySelector('.buttons-grid').addEventListener('click', gridHandler);
+      document.querySelector('.science-row').addEventListener('click', scienceHandler);
+      document.addEventListener('keydown', keyHandler);
+
+      function gridHandler(e) {
+        const btn = e.target.closest('.btn');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const value = btn.dataset.value;
+        triggerJellyAnimation(btn, action);
+        createRipple(e, btn);
+        handleAction(action, value, btn);
+        animateDisplay(action);
+      }
+
+      function scienceHandler(e) {
+        const btn = e.target.closest('.science-btn');
+        if (!btn) return;
+        triggerJellyAnimation(btn, btn.dataset.action);
+        createRipple(e, btn);
+        const action = btn.dataset.action;
+        const value = btn.dataset.value;
+        if (action === 'constant') insertConstant(value);
+        else if (action === 'sqrt') applySqrt();
+        else if (action === 'graph') openGraphModal();
+      }
+
+      function keyHandler(e) {
+        const key = e.key;
+        let action = null, value = null, targetBtn = null;
+        if (key >= '0' && key <= '9') { action='number'; value=key; targetBtn=document.querySelector(`.btn-number[data-value="${key}"]`); }
+        else if (key === '.') { action='decimal'; targetBtn=document.querySelector('.btn-number[data-value="."]'); }
+        else if (key === '+') { action='operator'; value='+'; targetBtn=document.querySelector('.btn-operator[data-value="+"]'); }
+        else if (key === '-') { action='operator'; value='−'; targetBtn=document.querySelector('.btn-operator[data-value="−"]'); }
+        else if (key === '*') { action='operator'; value='×'; targetBtn=document.querySelector('.btn-operator[data-value="×"]'); }
+        else if (key === '/') { action='operator'; value='÷'; targetBtn=document.querySelector('.btn-operator[data-value="÷"]'); }
+        else if (key === 'Enter' || key === '=') { action='equals'; targetBtn=document.querySelector('.btn-equals'); }
+        else if (key === 'Escape') { action='clear'; targetBtn=document.querySelector('[data-action="clear"]'); }
+        else if (key === 'Backspace') { action='backspace'; targetBtn=document.querySelector('[data-action="clear"]'); }
+        else if (key === '%') { action='percent'; targetBtn=document.querySelector('[data-action="percent"]'); }
+        if (action && targetBtn) {
+          e.preventDefault();
+          triggerJellyAnimation(targetBtn, action);
+          createRippleAtCenter(targetBtn);
+          handleAction(action, value, targetBtn);
+          animateDisplay(action);
+        }
+      }
+
+      function handleAction(action, value, btn) {
+        switch(action) {
+          case 'number': handleNumber(value); break;
+          case 'decimal': handleDecimal(); break;
+          case 'operator': handleOperator(value, btn); break;
+          case 'equals': handleEquals(); break;
+          case 'clear': handleClear(); break;
+          case 'toggle-sign': handleToggleSign(); break;
+          case 'percent': handlePercent(); break;
+          case 'backspace': handleBackspace(); break;
+        }
+        updateDisplay(currentInput, expressionText);
+      }
+
+      function handleNumber(value) {
+        if (justEvaluated) { currentInput=value; previousInput=''; operator=null; expressionText=''; justEvaluated=false; shouldResetDisplay=false; }
+        else if (shouldResetDisplay || currentInput==='0') { currentInput = (shouldResetDisplay||currentInput==='0') ? value : currentInput+value; shouldResetDisplay=false; }
+        else { if(currentInput.length<14) currentInput+=value; }
+        clearOperatorHighlight(); justEvaluated=false;
+      }
+
+      function handleDecimal() {
+        if (justEvaluated) { currentInput='0.'; previousInput=''; operator=null; expressionText=''; justEvaluated=false; shouldResetDisplay=false; }
+        else if (shouldResetDisplay) { currentInput='0.'; shouldResetDisplay=false; }
+        else if (!currentInput.includes('.')) currentInput+='.';
+        clearOperatorHighlight(); justEvaluated=false;
+      }
+
+      function handleOperator(value, btn) {
+        const cur = parseFloat(currentInput);
+        if (operator && !shouldResetDisplay && !justEvaluated) {
+          const prev = parseFloat(previousInput);
+          const res = calculate(prev, cur, operator);
+          currentInput = formatResult(res);
+          previousInput = currentInput;
+          expressionText = currentInput + ' ' + value;
+        } else if (justEvaluated && lastResult!==null) {
+          previousInput = formatResult(lastResult);
+          currentInput = previousInput;
+          expressionText = previousInput + ' ' + value;
+          justEvaluated=false;
+        } else {
+          previousInput = currentInput;
+          expressionText = currentInput + ' ' + value;
+        }
+        operator = value; shouldResetDisplay=true; justEvaluated=false;
+        highlightOperator(btn);
+      }
+
+      function handleEquals() {
+        if (operator && !justEvaluated) {
+          const cur = parseFloat(currentInput);
+          const prev = parseFloat(previousInput);
+          const res = calculate(prev, cur, operator);
+          expressionText = previousInput + ' ' + operator + ' ' + currentInput + ' =';
+          if (res===null || isNaN(res)) { currentInput='Error'; triggerDisplayShake(); }
+          else { currentInput=formatResult(res); lastResult=res; }
+          previousInput=''; operator=null; shouldResetDisplay=true; justEvaluated=true; clearOperatorHighlight();
+          triggerCardBounce();
+          if (res!==null && !isNaN(res)) triggerDisplayGlow();
+        } else if (justEvaluated && lastResult!==null) {
+          triggerCardBounce(); triggerDisplayGlow();
+        }
+      }
+
+      function handleClear() {
+        currentInput='0'; previousInput=''; operator=null; expressionText=''; shouldResetDisplay=false; justEvaluated=false; lastResult=null; clearOperatorHighlight();
+      }
+      function handleToggleSign() {
+        if (currentInput!=='0' && currentInput!=='Error') currentInput = currentInput.startsWith('-') ? currentInput.slice(1) : '-'+currentInput;
+        if (justEvaluated && lastResult!==null) { lastResult=-lastResult; currentInput=formatResult(lastResult); }
+      }
+      function handlePercent() {
+        const num = parseFloat(currentInput);
+        if (!isNaN(num)) currentInput = formatResult(num/100);
+        if (justEvaluated && lastResult!==null) { lastResult=lastResult/100; currentInput=formatResult(lastResult); }
+      }
+      function handleBackspace() {
+        if (justEvaluated||shouldResetDisplay) return;
+        currentInput = currentInput.length>1 ? currentInput.slice(0,-1) : '0';
+      }
+
+      function calculate(a,b,op) {
+        let res;
+        switch(op) {
+          case '+': res=a+b; break;
+          case '−': res=a-b; break;
+          case '×': res=a*b; break;
+          case '÷': return b===0 ? null : a/b;
+          default: return b;
+        }
+        return Math.abs(res)<1e14 ? parseFloat(res.toPrecision(12)) : res;
+      }
+
+      function formatResult(num) {
+        if (num===null || isNaN(num) || !isFinite(num)) return 'Error';
+        if (Math.abs(num)>=1e14 || (Math.abs(num)<1e-10 && num!==0)) return num.toExponential(8);
+        let str = num.toString();
+        if (str.length>14) {
+          const fixed = num.toPrecision(10);
+          return fixed.length<=14 ? fixed : num.toExponential(6);
+        }
+        return str;
+      }
+
+      function highlightOperator(btn) {
+        clearOperatorHighlight();
+        if (btn && btn.classList.contains('btn-operator')) btn.classList.add('active-operator');
+      }
+      function clearOperatorHighlight() {
+        document.querySelectorAll('.btn-operator.active-operator').forEach(b=>b.classList.remove('active-operator'));
+      }
+
+      // 科学功能
+      function insertConstant(type) {
+        const val = type === 'pi' ? Math.PI : Math.E;
+        if (justEvaluated || currentInput === '0' || shouldResetDisplay) {
+          currentInput = val.toString();
+          shouldResetDisplay = false;
+          justEvaluated = false;
+          expressionText = '';
+        } else {
+          currentInput = val.toString();
+        }
+        updateDisplay(currentInput, expressionText);
+        animateDisplay('number');
+      }
+
+      function applySqrt() {
+        const num = parseFloat(currentInput);
+        if (!isNaN(num) && num >= 0) {
+          currentInput = formatResult(Math.sqrt(num));
+          if (justEvaluated && lastResult!==null) lastResult = parseFloat(currentInput);
+        } else if (num < 0) {
+          currentInput = 'Error';
+        }
+        updateDisplay(currentInput, expressionText);
+        animateDisplay('operator');
+      }
+
+      // ========== 绘图功能 ==========
+      function openGraphModal() {
+        graphModal.classList.add('active');
+        funcInput.value = 'sin(x)';
+        setTimeout(() => drawGraph('sin(x)'), 50);
+      }
+
+      function closeGraphModalFn() {
+        graphModal.classList.remove('active');
+      }
+
+      graphBtn.addEventListener('click', openGraphModal);
+      closeGraphBtn.addEventListener('click', closeGraphModalFn);
+      drawGraphBtn.addEventListener('click', () => {
+        const expr = funcInput.value.trim();
+        if (expr) drawGraph(expr);
+      });
+      funcInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') drawGraphBtn.click();
+      });
+
+      function drawGraph(expression) {
+        const canvas = graphCanvas;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width = canvas.clientWidth || 400;
+        const h = canvas.height = 200;
+
+        let fn;
+        try {
+          let safeExpr = expression
+            .replace(/sin/g, 'Math.sin')
+            .replace(/cos/g, 'Math.cos')
+            .replace(/tan/g, 'Math.tan')
+            .replace(/log/g, 'Math.log')
+            .replace(/sqrt/g, 'Math.sqrt')
+            .replace(/PI/g, 'Math.PI')
+            .replace(/E/g, 'Math.E')
+            .replace(/\^/g, '**');
+          fn = new Function('x', `return ${safeExpr};`);
+          fn(0);
+        } catch (e) {
+          ctx.clearRect(0, 0, w, h);
+          ctx.fillStyle = '#ff6b6b';
+          ctx.font = '14px sans-serif';
+          ctx.fillText('表达式错误', 20, h/2);
+          return;
+        }
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+        ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h);
+        ctx.stroke();
+
+        const xMin = -2 * Math.PI;
+        const xMax = 2 * Math.PI;
+        const step = (xMax - xMin) / w;
+        let yValues = [];
+        let yMin = Infinity, yMax = -Infinity;
+
+        for (let i = 0; i <= w; i++) {
+          const x = xMin + i * step;
+          let y;
+          try { y = fn(x); } catch { y = NaN; }
+          if (isNaN(y) || !isFinite(y)) yValues.push(null);
+          else {
+            yValues.push(y);
+            if (y < yMin) yMin = y;
+            if (y > yMax) yMax = y;
+          }
+        }
+
+        if (!isFinite(yMin) || !isFinite(yMax)) { yMin = -5; yMax = 5; }
+        const yRange = yMax - yMin || 1;
+        const scaleY = h / yRange;
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#ff6b4a';
+        ctx.lineWidth = 2;
+        let started = false;
+
+        for (let i = 0; i < yValues.length; i++) {
+          const yVal = yValues[i];
+          if (yVal === null) { started = false; continue; }
+          const canvasX = i;
+          const canvasY = h - (yVal - yMin) * scaleY;
+          if (!started) { ctx.moveTo(canvasX, canvasY); started = true; }
+          else { ctx.lineTo(canvasX, canvasY); }
+        }
+        ctx.stroke();
+      }
+
+      // 初始化默认绘图
+      window.addEventListener('load', () => {
+        drawGraph('sin(x)');
+      });
+
+      // ========== 动画特效 ==========
+      function triggerJellyAnimation(btn, action) {
+        btn.classList.remove('jelly-pop','jelly-pop-big','jelly-pop-small','shake');
+        void btn.offsetWidth;
+        let cls = 'jelly-pop';
+        if (action==='equals') { cls='jelly-pop-big'; spawnParticles(btn); }
+        else if (['clear','toggle-sign','percent','backspace','constant','sqrt'].includes(action)) cls='jelly-pop-small';
+        else if (action==='operator') cls='jelly-pop';
+        btn.classList.add(cls);
+        setTimeout(()=>btn.classList.remove(cls), (cls==='jelly-pop-big'?500:(cls==='jelly-pop-small'?300:380))+20);
+      }
+
+      function createRipple(e, btn) {
+        const ripple = document.createElement('span');
+        ripple.classList.add('ripple');
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size+'px';
+        ripple.style.left = (e.clientX-rect.left-size/2)+'px';
+        ripple.style.top = (e.clientY-rect.top-size/2)+'px';
+        btn.appendChild(ripple);
+        ripple.addEventListener('animationend', ()=>ripple.remove());
+      }
+
+      function createRippleAtCenter(btn) {
+        const ripple = document.createElement('span');
+        ripple.classList.add('ripple');
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size+'px';
+        ripple.style.left = (rect.width/2-size/2)+'px';
+        ripple.style.top = (rect.height/2-size/2)+'px';
+        btn.appendChild(ripple);
+        ripple.addEventListener('animationend', ()=>ripple.remove());
+      }
+
+      function spawnParticles(btn) {
+        const rect = btn.getBoundingClientRect();
+        const cx = rect.width/2, cy = rect.height/2;
+        const colors = ['#ff3366','#ff6b4a','#ffb347','#ff5c8a','#fff'];
+        for(let i=0;i<18;i++) {
+          const p = document.createElement('span');
+          p.classList.add('particle');
+          const angle = (Math.PI*2*i)/18 + (Math.random()-0.5)*0.5;
+          const dist = 30+Math.random()*55;
+          p.style.cssText = `width:${3+Math.random()*7}px;height:${3+Math.random()*7}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${cx}px;top:${cy}px;--px:${Math.cos(angle)*dist}px;--py:${Math.sin(angle)*dist}px;`;
+          btn.appendChild(p);
+          p.addEventListener('animationend', ()=>p.remove());
+        }
+      }
+
+      function animateDisplay(action) {
+        resultEl.classList.remove('bounce-in','big-bounce');
+        void resultEl.offsetWidth;
+        if (action==='equals') resultEl.classList.add('big-bounce');
+        else resultEl.classList.add('bounce-in');
+        setTimeout(()=>resultEl.classList.remove('bounce-in','big-bounce'), 600);
+      }
+
+      function triggerDisplayGlow() {
+        display.classList.remove('glow-pulse'); void display.offsetWidth;
+        display.classList.add('glow-pulse');
+        setTimeout(()=>display.classList.remove('glow-pulse'), 750);
+      }
+
+      function triggerDisplayShake() {
+        resultEl.style.animation = 'none'; void resultEl.offsetWidth;
+        resultEl.style.animation = 'btnShake 0.5s ease-in-out';
+        setTimeout(()=>resultEl.style.animation='', 550);
+      }
+
+      function triggerCardBounce() {
+        calculator.classList.remove('card-bounce'); void calculator.offsetWidth;
+        calculator.classList.add('card-bounce');
+        setTimeout(()=>calculator.classList.remove('card-bounce'), 650);
+      }
+
+      document.addEventListener('dblclick', e => { if (e.target.closest('.btn,.science-btn')) e.preventDefault(); }, {passive: false});
+    })();
+  </script>
+</body>
+</html>
