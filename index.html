@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>html作品</title>
+
+    <style>
+        /* ===== 全局重置 & 基础 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            background: #0a0e1a;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* ===== 启动界面 ===== */
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 40%, #1a1040 0%, #0a0e1a 70%);
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        #splash.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #splash::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            animation: glowPulse 4s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes glowPulse {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+        }
+
+        .splash-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 20px;
+            max-width: 500px;
+            animation: fadeUp 1.2s ease forwards;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(40px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .splash-icon {
+            font-size: 72px;
+            display: block;
+            margin-bottom: 16px;
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        .splash-title {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #818cf8, #a78bfa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            text-shadow: 0 0 60px rgba(129, 140, 248, 0.3);
+            margin-bottom: 8px;
+        }
+
+        .splash-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 4px;
+            font-weight: 300;
+            margin-bottom: 40px;
+        }
+
+        .splash-btn {
+            display: inline-block;
+            padding: 14px 52px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
+            letter-spacing: 2px;
+            animation: btnPulse 2.5s ease-in-out infinite;
+        }
+
+        .splash-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 48px rgba(99, 102, 241, 0.55);
+        }
+
+        .splash-btn:active { transform: scale(0.95); }
+
+        @keyframes btnPulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35); }
+            50% { box-shadow: 0 8px 56px rgba(99, 102, 241, 0.65); }
+        }
+
+        .splash-version {
+            position: absolute;
+            bottom: 32px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 2px;
+            z-index: 2;
+        }
+
+        /* ===== 主界面 ===== */
+        #main {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 50%, #14142e 0%, #0a0e1a 80%);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease 0.3s, visibility 0.8s ease 0.3s;
+            padding: 20px;
+        }
+
+        #main.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .main-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .main-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 3px;
+        }
+
+        .main-header p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+
+        /* ===== 网格卡片 ===== */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px 28px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            text-decoration: none;
+            color: #fff;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.35s ease,
+                        border-color 0.35s ease,
+                        background 0.35s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: 160px;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 24px 24px 0 0;
+            transition: height 0.35s ease;
+        }
+
+        .card:hover::before { height: 6px; }
+
+        /* 卡片 - 计算器 */
+        .card-calculator::before {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
+        .card-calculator:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 12px 48px rgba(59, 130, 246, 0.15);
+            background: rgba(59, 130, 246, 0.08);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        /* 卡片 - 漂移赛车 */
+        .card-racing::before {
+            background: linear-gradient(90deg, #ef4444, #f97316);
+        }
+        .card-racing:hover {
+            border-color: rgba(239, 68, 68, 0.4);
+            box-shadow: 0 12px 48px rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.08);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        /* 卡片 - 函数画图器 */
+        .card-plotter::before {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        .card-plotter:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 12px 48px rgba(16, 185, 129, 0.15);
+            background: rgba(16, 185, 129, 0.08);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        /* 卡片 - 漂移赛车模组模板 */
+        .card-template::before {
+            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+        }
+        .card-template:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 12px 48px rgba(139, 92, 246, 0.15);
+            background: rgba(139, 92, 246, 0.08);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        /* 卡片 - 游戏中心 */
+        .card-games::before {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        .card-games:hover {
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 12px 48px rgba(245, 158, 11, 0.15);
+            background: rgba(245, 158, 11, 0.08);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        .card-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover .card-icon {
+            transform: scale(1.15) rotate(-4deg);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        /* 卡片点击波纹 */
+        .card .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(0);
+            animation: rippleAnim 0.6s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .grid { gap: 16px; max-width: 100%; }
+            .card { padding: 24px 14px 20px; min-height: 130px; }
+            .card-icon { font-size: 32px; }
+            .card-title { font-size: 15px; }
+            .card-desc { font-size: 11px; }
+            .splash-title { font-size: 32px; }
+            .splash-icon { font-size: 56px; }
+            .splash-btn { padding: 12px 36px; font-size: 16px; }
+            .main-header h1 { font-size: 22px; }
+        }
+
+        @media (max-width: 420px) {
+            .grid { gap: 12px; }
+            .card { padding: 18px 10px 16px; min-height: 110px; border-radius: 18px; }
+            .card-icon { font-size: 26px; }
+            .card-title { font-size: 13px; }
+            .card-desc { font-size: 10px; }
+            .splash-title { font-size: 26px; }
+        }
+
+        .hidden { display: none !important; }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    启动界面
+    ============================================================ -->
+    <div id="splash" role="dialog" aria-label="启动界面">
+        <div class="splash-content">
+            <span class="splash-icon">⚡</span>
+            <div class="splash-title">html多作品</div>
+            <div class="splash-subtitle">选择你的html · 开始</div>
+            <button class="splash-btn" id="enterBtn">进 入</button>
+        </div>
+        <div class="splash-version">v1.0 · 点击进入</div>
+    </div>
+
+    <!-- ============================================================
+    主界面
+    ============================================================ -->
+    <div id="main" role="main" aria-label="主界面">
+        <div class="main-header">
+            <h1>html</h1>
+            <p>点击卡片跳转对应html</p>
+        </div>
+
+        <div class="grid">
+            <!-- 1. 计算器 -->
+            <a href="#" class="card card-calculator" data-link="calculator" target="_self">
+                <span class="card-icon">🧮</span>
+                <span class="card-title">计算器</span>
+                <span class="card-desc">数学计算 · 科学工具</span>
+            </a>
+
+            <!-- 2. 漂移赛车 -->
+            <a href="#" class="card card-racing" data-link="racing" target="_self">
+                <span class="card-icon">🏎️</span>
+                <span class="card-title">漂移赛车</span>
+                <span class="card-desc">极速漂移 · 赛道狂飙</span>
+            </a>
+
+            <!-- 3. 函数画图器 -->
+            <a href="#" class="card card-plotter" data-link="plotter" target="_self">
+                <span class="card-icon">📈</span>
+                <span class="card-title">函数画图器</span>
+                <span class="card-desc">数学可视化 · 函数绘制</span>
+            </a>
+
+            <!-- 4. 漂移赛车模组模板 -->
+            <a href="#" class="card card-template" data-link="template" target="_self">
+                <span class="card-icon">🕹️</span>
+                <span class="card-title">漂移赛车模组</span>
+                <span class="card-desc">模组模板 · 自定义扩展</span>
+            </a>
+
+            <!-- 5. 游戏中心 -->
+            <a href="#" class="card card-games" data-link="games" target="_self">
+                <span class="card-icon">🎮</span>
+                <span class="card-title">游戏中心</span>
+                <span class="card-desc">经典游戏 · 休闲娱乐</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const LINKS = {
+            calculator: 'https://xufengchina.github.io/saichepiaoyi/suan.html',
+            racing: 'https://xufengchina.github.io/saichepiaoyi/b.html',
+            plotter: 'https://xufengchina.github.io/saichepiaoyi/han.html',
+            template: 'https://xufengchina.github.io/saichepiaoyi/modmb.html',
+            games: 'https://xufengchina.github.io/saichepiaoyi/games.html',
+        };
+
+        const DEFAULT_TARGET = '_self';
+
+        const splash = document.getElementById('splash');
+        const main = document.getElementById('main');
+        const enterBtn = document.getElementById('enterBtn');
+        const cards = document.querySelectorAll('.card');
+
+        function enterMain() {
+            splash.classList.add('hidden');
+            main.classList.add('visible');
+        }
+
+        enterBtn.addEventListener('click', enterMain);
+        enterBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                enterMain();
+            }
+        });
+
+        cards.forEach((card) => {
+            card.addEventListener('click', function(e) {
+                const key = this.dataset.link;
+                const url = LINKS[key];
+
+                if (!url || url === '#' || url === 'https://example.com/' + key) {
+                    e.preventDefault();
+                    alert('⚠️ 请先在代码中配置「' + key + '」的链接！\n（在 JavaScript 的 LINKS 对象中修改）');
+                    return;
+                }
+
+                const target = this.getAttribute('target') || DEFAULT_TARGET;
+
+                if (target === '_blank') {
+                    window.open(url, '_blank');
+                } else {
+                    window.location.href = url;
+                }
+
+                e.preventDefault();
+            });
+
+            card.addEventListener('mousedown', function(e) {
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                this.appendChild(ripple);
+
+                ripple.addEventListener('animationend', () => {
+                    ripple.remove();
+                });
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const active = document.activeElement;
+                if (active && active.classList && active.classList.contains('card')) {
+                    e.preventDefault();
+                    active.click();
+                }
+            }
+        });
+
+        console.log('🔧 开发工具箱已加载！');
+        console.log('📌 如需修改链接，请编辑 JavaScript 中的 LINKS 对象。');
+        console.log('当前链接配置:', LINKS);
+    </script>
+
+</body>
+</html>

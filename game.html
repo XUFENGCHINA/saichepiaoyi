@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 游戏中心 - 十八合一 | 🦐 小龙虾</title>
+<style>
+:root{--bg:#0f0f1a;--panel-bg:#1a1a2e;--text:#e0e0e0;--accent:#ff6b6b;--accent2:#4ecdc4;--accent3:#ffe66d;--accent4:#a29bfe;--gold:#f9ca24;--border:#2a2a3e;--btn-bg:#252540;--btn-hover:#303055;--shadow:0 8px 32px rgba(0,0,0,0.4);--radius:16px;--radius-sm:10px;--transition:0.25s cubic-bezier(0.4,0,0.2,1)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;background-image:radial-gradient(ellipse at 20% 10%,rgba(255,107,107,0.08)0%,transparent 60%),radial-gradient(ellipse at 80% 90%,rgba(78,205,196,0.08)0%,transparent 60%),radial-gradient(ellipse at 50% 50%,rgba(162,155,254,0.05)0%,transparent 60%);display:flex;flex-direction:column;align-items:center;padding:10px}
+.header{text-align:center;padding:20px 10px 10px;width:100%;max-width:750px}
+.header h1{font-size:2.2em;font-weight:800;background:linear-gradient(135deg,#ff6b6b,#feca57,#4ecdc4,#a29bfe);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradient-shift 4s ease infinite;letter-spacing:2px}
+@keyframes gradient-shift{0%,100%{background-position:0% 50%}25%{background-position:100% 0%}50%{background-position:100% 100%}75%{background-position:0% 100%}}
+.header .subtitle{color:#888;font-size:0.85em;margin-top:2px;letter-spacing:1px}
+.nav-container{width:100%;max-width:750px;overflow-x:auto;padding:5px 0 10px;scrollbar-width:thin}
+.nav-container::-webkit-scrollbar{height:4px}
+.nav-container::-webkit-scrollbar-track{background:transparent}
+.nav-container::-webkit-scrollbar-thumb{background:#444;border-radius:10px}
+.nav-tabs{display:flex;gap:6px;padding:0 5px;min-width:max-content;justify-content:center}
+.nav-tab{flex-shrink:0;padding:8px 12px;border-radius:25px;border:2px solid transparent;background:var(--btn-bg);color:#aaa;cursor:pointer;font-size:0.8em;font-weight:600;transition:var(--transition);white-space:nowrap;user-select:none}
+.nav-tab:hover{background:var(--btn-hover);color:#fff;border-color:#444;transform:translateY(-2px)}
+.nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 20px rgba(255,107,107,0.35);transform:translateY(-2px)}
+.nav-tab.kimi{background:linear-gradient(135deg,#252540,#2a1a3e)}
+.nav-tab.kimi.active{background:linear-gradient(135deg,#667eea,#764ba2);border-color:#764ba2}
+.nav-tab.doubao{background:linear-gradient(135deg,#252540,#1a2a3e)}
+.nav-tab.doubao.active{background:linear-gradient(135deg,#4a90e2,#357abd);border-color:#357abd}
+.nav-tab.lobster{background:linear-gradient(135deg,#252540,#1a2a1e)}
+.nav-tab.lobster.active{background:linear-gradient(135deg,#e74c3c,#c0392b);border-color:#c0392b;box-shadow:0 4px 20px rgba(231,76,60,0.35)}
+.main-container{width:100%;max-width:750px;flex:1}
+.game-panel{display:none;background:var(--panel-bg);border-radius:var(--radius);padding:20px 15px;box-shadow:var(--shadow);border:1px solid var(--border);animation:fadeIn 0.35s ease;min-height:400px;text-align:center;position:relative}
+.game-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.game-panel h2{font-size:1.3em;margin-bottom:4px;color:#fff;letter-spacing:1px}
+.game-panel h2 .badge{font-size:0.5em;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px}
+.badge-ds{background:#ff6b6b;color:#fff}
+.badge-km{background:#667eea;color:#fff}
+.badge-db{background:#4a90e2;color:#fff}
+.badge-lobster{background:#e74c3c;color:#fff}
+.game-panel .game-desc{color:#777;font-size:0.8em;margin-bottom:12px}
+.score-display{font-size:1em;font-weight:700;color:var(--accent3);margin-bottom:10px;letter-spacing:1px}
+.btn{padding:8px 18px;border-radius:25px;border:none;cursor:pointer;font-weight:700;font-size:0.9em;letter-spacing:0.5px;transition:var(--transition);margin:3px;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#e55a5a;transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,107,107,0.3)}
+.btn-secondary{background:var(--btn-bg);color:#ccc;border:1px solid #444}
+.btn-secondary:hover{background:var(--btn-hover);color:#fff;border-color:#666}
+.canvas-wrapper{display:inline-block;border-radius:var(--radius-sm);overflow:hidden;box-shadow:0 0 30px rgba(0,0,0,0.5);border:2px solid var(--border);background:#000}
+canvas{display:block;max-width:100%}
+.grid-3x3{display:grid;grid-template-columns:repeat(3,80px);grid-template-rows:repeat(3,80px);gap:6px;justify-content:center;margin:8px auto}
+.grid-4x4{display:grid;grid-template-columns:repeat(4,65px);grid-template-rows:repeat(4,65px);gap:5px;justify-content:center;margin:8px auto}
+@media(max-width:420px){.grid-3x3{grid-template-columns:repeat(3,65px);grid-template-rows:repeat(3,65px)}.grid-4x4{grid-template-columns:repeat(4,55px);grid-template-rows:repeat(4,55px)}}
+.cell{border-radius:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:var(--transition);font-size:1.1em}
+.cell-mole{background:#2a2a3e;border:2px solid #3a3a50;font-size:2em}
+.cell-mole.active{background:#ff6b6b;border-color:#ff4444;box-shadow:0 0 20px rgba(255,107,107,0.5);animation:pop 0.15s ease}
+@keyframes pop{0%{transform:scale(0.7)}100%{transform:scale(1)}}
+.cell-memory{background:#252540;border:2px solid #3a3a50;font-size:1.6em;cursor:pointer;transition:all 0.3s ease}
+.cell-memory.flipped{background:#4ecdc4;border-color:#3dbdb5;color:#000;box-shadow:0 0 15px rgba(78,205,196,0.4)}
+.cell-memory.matched{background:#2ecc71;border-color:#27ae60;cursor:default;box-shadow:0 0 12px rgba(46,204,113,0.4);pointer-events:none}
+.cell-2048{background:#2a2a3e;border:2px solid #3a3a50;font-size:1.2em;font-weight:800;cursor:default;transition:all 0.15s ease}
+.cell-2048[data-value="2"]{background:#eee4da;color:#776e65}
+.cell-2048[data-value="4"]{background:#ede0c8;color:#776e65}
+.cell-2048[data-value="8"]{background:#f2b179;color:#fff}
+.cell-2048[data-value="16"]{background:#f59563;color:#fff}
+.cell-2048[data-value="32"]{background:#f67c5f;color:#fff}
+.cell-2048[data-value="64"]{background:#f65e3b;color:#fff}
+.cell-2048[data-value="128"]{background:#edcf72;color:#fff;font-size:1em}
+.cell-2048[data-value="256"]{background:#edcc61;color:#fff;font-size:1em}
+.cell-2048[data-value="512"]{background:#edc850;color:#fff;font-size:1em}
+.cell-2048[data-value="1024"]{background:#edc53f;color:#fff;font-size:0.85em}
+.cell-2048[data-value="2048"]{background:#edc22e;color:#fff;font-size:0.8em;box-shadow:0 0 20px rgba(237,194,46,0.6)}
+.cell-tic{background:#252540;border:2px solid #3a3a50;font-size:2.2em;cursor:pointer;transition:var(--transition);font-weight:700;min-height:70px;display:flex;align-items:center;justify-content:center}
+.cell-tic:hover{background:#303055;border-color:#555}
+.cell-tic.x{color:#4ecdc4}
+.cell-tic.o{color:#ff6b6b}
+.cell-tic.win{background:#2ecc71;border-color:#27ae60;animation:pulse 0.5s ease infinite alternate}
+@keyframes pulse{from{box-shadow:0 0 10px rgba(46,204,113,0.4)}to{box-shadow:0 0 25px rgba(46,204,113,0.8)}}
+.game-input{padding:8px 14px;border-radius:10px;border:2px solid #444;background:#252540;color:#fff;font-size:1em;text-align:center;width:120px;font-family:inherit}
+.game-input:focus{outline:none;border-color:var(--accent)}
+.reaction-area{width:280px;height:180px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2em;font-weight:700;cursor:pointer;margin:10px auto;transition:background 0.2s;user-select:none}
+.reaction-area.waiting{background:#e74c3c;color:#fff}
+.reaction-area.ready{background:#2ecc71;color:#fff}
+.reaction-area.readying{background:#f39c12;color:#fff}
+.reaction-area.result{background:#3498db;color:#fff}
+.dpad{display:inline-block}.dpad-row{display:flex;justify-content:center}
+.dpad-btn{width:44px;height:44px;border-radius:10px;border:2px solid #444;background:var(--btn-bg);color:#ccc;font-size:1.2em;cursor:pointer;margin:2px;transition:var(--transition)}
+.dpad-btn:hover{background:var(--btn-hover);color:#fff;border-color:#666}
+.dpad-btn:active{transform:scale(0.9)}
+.typing-display{font-size:1.2em;font-family:'Courier New',monospace;background:#0f0f1a;padding:12px 16px;border-radius:10px;margin:8px auto;max-width:320px;line-height:1.6;letter-spacing:1px;border:1px solid #333}
+.typing-display .correct{color:#2ecc71}
+.typing-display .current{background:var(--accent);color:#fff;padding:0 2px;border-radius:3px}
+.rps-choices{display:flex;gap:15px;justify-content:center;margin:10px 0}
+.rps-btn{width:70px;height:70px;border-radius:50%;background:var(--btn-bg);border:3px solid #444;display:flex;align-items:center;justify-content:center;font-size:2.2em;cursor:pointer;transition:var(--transition)}
+.rps-btn:hover{background:var(--btn-hover);border-color:var(--accent);transform:scale(1.1)}
+.rps-btn:active{transform:scale(0.9)}
+.whack-board{display:grid;grid-template-columns:repeat(3,80px);gap:10px;justify-content:center;margin:10px auto}
+.hole{width:80px;height:80px;background:radial-gradient(circle,#2a2a3e,#1a1a2e);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:3px solid #3a3a50;font-size:2em}
+.hole .mole{opacity:0;transition:opacity 0.15s;transform:translateY(10px)}
+.hole .mole.up{opacity:1;transform:translateY(0)}
+.dodge-canvas,#dodgeCanvas{border:3px solid #667eea;border-radius:10px;display:block;margin:0 auto;background:#1a1a2e;max-width:100%}
+.click-area{width:240px;height:240px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;margin:15px auto;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3em;cursor:pointer;user-select:none;transition:transform 0.1s}
+.click-area:active{transform:scale(0.95)}
+.shooter-canvas,#shooterCanvas{border:3px solid #667eea;border-radius:10px;display:block;margin:0 auto;background:#0a0a1a;max-width:100%}
+.maze-canvas,#mazeCanvas{border:3px solid #667eea;border-radius:10px;display:block;margin:0 auto;background:#1a1a2e;max-width:100%}
+.dice-display{display:flex;justify-content:center;gap:50px;font-size:3em;margin:15px 0}
+.dice-box{text-align:center}
+.dice-box div:last-child{font-size:2em;margin-top:5px}
+.color-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.color-btn{width:70px;height:70px;border-radius:12px;border:3px solid transparent;cursor:pointer;transition:var(--transition);font-size:1em;color:#fff;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.color-btn:hover{transform:scale(1.1);border-color:#fff}
+.color-btn:active{transform:scale(0.9)}
+.controls-info{color:#888;font-size:0.8em;margin:5px 0}
+.start-btn{padding:8px 20px;border-radius:25px;border:none;cursor:pointer;font-weight:700;font-family:inherit;background:var(--accent);color:#fff;margin-top:8px;transition:var(--transition)}
+.start-btn:hover{background:#e55a5a;transform:translateY(-2px)}
+.source-tag{position:absolute;top:8px;right:10px;font-size:0.7em;padding:2px 8px;border-radius:10px;color:#fff}
+.source-ds{background:rgba(255,107,107,0.3);border:1px solid rgba(255,107,107,0.5)}
+.source-km{background:rgba(102,126,234,0.3);border:1px solid rgba(102,126,234,0.5)}
+.source-db{background:rgba(74,144,226,0.3);border:1px solid rgba(74,144,226,0.5)}
+.source-lobster{background:rgba(231,76,60,0.3);border:1px solid rgba(231,76,60,0.5)}
+.pixel-launch{font-size:1.2em;padding:14px 36px;border-radius:30px;border:none;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;font-weight:700;cursor:pointer;margin:12px 0;transition:var(--transition);letter-spacing:1px;box-shadow:0 6px 20px rgba(231,76,60,0.3)}
+.pixel-launch:hover{transform:scale(1.05);box-shadow:0 8px 30px rgba(231,76,60,0.4)}
+.pixel-frame{width:100%;height:65vh;border:none;border-radius:10px;margin-top:5px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎮 游戏中心 - 十八合一 🦐</h1>
+  <p class="subtitle">Deepseek · Kimi · 豆包 · 🦐 小龙虾 四站合并 · 共18款游戏</p>
+</div>
+
+<div class="nav-container">
+  <div class="nav-tabs" id="navTabs">
+    <button class="nav-tab active" data-game="0">🎯 猜数字</button>
+    <button class="nav-tab" data-game="1">✌️ 石头剪刀布</button>
+    <button class="nav-tab" data-game="2">🧠 记忆翻牌</button>
+    <button class="nav-tab" data-game="3">🔨 打地鼠</button>
+    <button class="nav-tab" data-game="4">🐍 贪吃蛇</button>
+    <button class="nav-tab" data-game="5">🔢 2048</button>
+    <button class="nav-tab" data-game="6">⚡ 反应测试</button>
+    <button class="nav-tab" data-game="7">⌨️ 打字速度</button>
+    <button class="nav-tab" data-game="8">🧱 打砖块</button>
+    <button class="nav-tab" data-game="9">❌ 井字棋</button>
+    <button class="nav-tab kimi" data-game="10">⚪ 弹球躲避</button>
+    <button class="nav-tab kimi" data-game="11">👆 快速点击</button>
+    <button class="nav-tab kimi" data-game="12">🌀 迷宫探险</button>
+    <button class="nav-tab kimi" data-game="13">🚀 太空射击</button>
+    <button class="nav-tab doubao" data-game="14">🎨 颜色匹配</button>
+    <button class="nav-tab doubao" data-game="15">🎲 掷骰子</button>
+    <button class="nav-tab doubao" data-game="16">🧮 速算大师</button>
+    <button class="nav-tab lobster" data-game="17">🏔️ 像素世界</button>
+  </div>
+</div>
+
+<div class="main-container" id="mainContainer">
+
+<!-- 0: 猜数字 -->
+<div class="game-panel active" id="game-0"><span class="source-tag source-ds">Deepseek</span><h2>🎯 猜数字</h2><p class="game-desc">电脑想了一个 1~100 的数字，猜猜看！</p><div class="score-display" id="guess-hint">🤔 准备好了吗？</div><input type="number" class="game-input" id="guess-input" placeholder="输入数字..." min="1" max="100"><br><br><button class="btn btn-primary" id="guess-submit">猜！</button><button class="btn btn-secondary" id="guess-reset">🔄 重新开始</button><p style="color:#888;margin-top:8px;font-size:0.8em;">剩余次数：<span id="guess-chances">10</span></p></div>
+<!-- 1: 石头剪刀布 -->
+<div class="game-panel" id="game-1"><span class="source-tag source-ds">Deepseek</span><h2>✌️ 石头剪刀布</h2><p class="game-desc">三局两胜，与电脑一决高下！</p><div class="score-display" id="rps-result">选择你的手势吧</div><div class="rps-choices"><div class="rps-btn" data-choice="rock">🪨</div><div class="rps-btn" data-choice="paper">📄</div><div class="rps-btn" data-choice="scissors">✂️</div></div><p style="color:#ccc;margin-top:6px;">你：<b id="rps-player-score">0</b> 胜 | 电脑：<b id="rps-computer-score">0</b> 胜</p><button class="btn btn-secondary" id="rps-reset" style="margin-top:6px;">🔄 重置比分</button></div>
+<!-- 2: 记忆翻牌 -->
+<div class="game-panel" id="game-2"><span class="source-tag source-ds">Deepseek</span><h2>🧠 记忆翻牌</h2><p class="game-desc">找出所有配对！翻开两张相同的牌即可消除</p><div class="score-display" id="memory-score">配对：0 / 8</div><div class="grid-4x4" id="memory-grid"></div><button class="btn btn-primary" id="memory-reset" style="margin-top:8px;">🔄 重新洗牌</button></div>
+<!-- 3: 打地鼠 -->
+<div class="game-panel" id="game-3"><span class="source-tag source-db">豆包 60秒版</span><h2>🔨 打地鼠</h2><p class="game-desc">60秒内点击尽可能多的地鼠！</p><div class="score-display">得分：<span id="moleScore3">0</span> | ⏱️ <span id="moleTime3">60</span>秒</div><div class="whack-board" id="moleBoard3"></div><button class="btn btn-primary" id="moleStart3">▶️ 开始游戏</button></div>
+<!-- 4: 贪吃蛇 -->
+<div class="game-panel" id="game-4"><span class="source-tag source-ds">Deepseek</span><h2>🐍 贪吃蛇</h2><p class="game-desc">方向键控制 · 吃到食物变长 · 别撞到自己！</p><div class="score-display" id="snake-score">得分：0</div><div class="canvas-wrapper"><canvas id="snake-canvas" width="400" height="400"></canvas></div><div class="dpad" style="margin-top:6px;"><div class="dpad-row"><button class="dpad-btn snake-dir" data-dir="up">▲</button></div><div class="dpad-row"><button class="dpad-btn snake-dir" data-dir="left">◀</button><button class="dpad-btn snake-dir" data-dir="down">▼</button><button class="dpad-btn snake-dir" data-dir="right">▶</button></div></div><button class="btn btn-primary" id="snake-reset" style="margin-top:6px;">🔄 重新开始</button></div>
+<!-- 5: 2048 -->
+<div class="game-panel" id="game-5"><span class="source-tag source-ds">Deepseek</span><h2>🔢 2048</h2><p class="game-desc">方向键滑动合并数字，目标2048！</p><div class="score-display" id="game2048-score">得分：0</div><div class="grid-4x4" id="grid2048"></div><div class="dpad" style="margin-top:6px;"><div class="dpad-row"><button class="dpad-btn dir2048" data-dir="up">▲</button></div><div class="dpad-row"><button class="dpad-btn dir2048" data-dir="left">◀</button><button class="dpad-btn dir2048" data-dir="down">▼</button><button class="dpad-btn dir2048" data-dir="right">▶</button></div></div><button class="btn btn-primary" id="game2048-reset" style="margin-top:6px;">🔄 重新开始</button></div>
+<!-- 6: 反应测试 -->
+<div class="game-panel" id="game-6"><span class="source-tag source-db">豆包版</span><h2>⚡ 反应速度测试</h2><p class="game-desc">当屏幕变绿时立即点击！测试你的反应速度</p><div class="reaction-area waiting" id="reaction-area6" style="cursor:pointer;">等待中...点击开始</div><div class="score-display" style="margin-top:8px;" id="reaction-result6">最佳成绩：-- ms</div><button class="btn btn-secondary" id="reaction-reset6">🔄 重新开始</button></div>
+<!-- 7: 打字速度 -->
+<div class="game-panel" id="game-7"><span class="source-tag source-ds">Deepseek</span><h2>⌨️ 打字速度测试</h2><p class="game-desc">准确输入显示的英文文本，计时打字速度</p><div class="typing-display" id="typing-display"></div><input type="text" class="game-input" id="typing-input" placeholder="在此输入..." style="width:260px;" disabled><div class="score-display" style="margin-top:6px;" id="typing-result">WPM：-- | 准确率：--</div><button class="btn btn-primary" id="typing-start">▶️ 开始测试</button></div>
+<!-- 8: 打砖块 -->
+<div class="game-panel" id="game-8"><span class="source-tag source-ds">Deepseek</span><h2>🧱 打砖块</h2><p class="game-desc">左右方向键/鼠标移动挡板 · 弹球消除砖块</p><div class="score-display" id="brick-score">得分：0 | ❤️ <span id="brick-lives">3</span></div><div class="canvas-wrapper"><canvas id="brick-canvas" width="400" height="350"></canvas></div><div class="dpad" style="margin-top:6px;"><div class="dpad-row"><button class="dpad-btn brick-left">◀</button><button class="dpad-btn brick-right">▶</button></div></div><button class="btn btn-primary" id="brick-reset" style="margin-top:6px;">🔄 重新开始</button></div>
+<!-- 9: 井字棋 -->
+<div class="game-panel" id="game-9"><span class="source-tag source-ds">Deepseek</span><h2>❌ 井字棋</h2><p class="game-desc">与电脑对战，看谁能连成一线！</p><div class="score-display" id="tic-result">你的回合 (X)</div><div class="grid-3x3" id="tic-grid"></div><p style="color:#ccc;margin-top:6px;">你(X)：<b id="tic-player">0</b> | 电脑(O)：<b id="tic-computer">0</b> | 平局：<b id="tic-draw">0</b></p><button class="btn btn-primary" id="tic-reset" style="margin-top:6px;">🔄 新一局</button></div>
+<!-- 10: 弹球躲避 -->
+<div class="game-panel" id="game-10"><span class="source-tag source-km">Kimi</span><h2>⚪ 弹球躲避</h2><p class="game-desc">移动鼠标控制方块躲避下落的白球</p><div class="score-display">得分: <span id="dodgeScore">0</span></div><canvas id="dodgeCanvas" width="400" height="450"></canvas><p class="controls-info">移动鼠标控制方块</p><button class="start-btn" onclick="initDodge()">🔄 重新开始</button></div>
+<!-- 11: 快速点击 -->
+<div class="game-panel" id="game-11"><span class="source-tag source-km">Kimi</span><h2>👆 快速点击测试</h2><p class="game-desc">10秒内疯狂点击，测测你的手速！</p><div class="score-display">时间: <span id="clickTime">10</span>秒 | 点击数: <span id="clickCount">0</span> | CPS: <span id="cpsVal">0</span></div><div class="click-area" id="clickArea">点击这里！</div><button class="start-btn" onclick="initClickSpeed()">🔄 重新开始</button></div>
+<!-- 12: 迷宫 -->
+<div class="game-panel" id="game-12"><span class="source-tag source-km">Kimi</span><h2>🌀 迷宫探险</h2><p class="game-desc">使用方向键移动蓝色方块找到红色出口</p><div class="score-display">找到红色出口即为胜利</div><canvas id="mazeCanvas" width="400" height="400"></canvas><p class="controls-info">方向键移动</p><button class="start-btn" onclick="initMaze()">🔄 生成新迷宫</button></div>
+<!-- 13: 太空射击 -->
+<div class="game-panel" id="game-13"><span class="source-tag source-km">Kimi</span><h2>🚀 太空射击</h2><p class="game-desc">方向键移动，空格键射击，消灭敌人！</p><div class="score-display">得分: <span id="shooterScore">0</span> | 生命: <span id="shooterLives">3</span></div><canvas id="shooterCanvas" width="400" height="450"></canvas><p class="controls-info">← → 移动 | 空格射击</p><button class="start-btn" onclick="initShooter()">🔄 重新开始</button></div>
+<!-- 14: 颜色匹配 -->
+<div class="game-panel" id="game-14"><span class="source-tag source-db">豆包</span><h2>🎨 颜色匹配</h2><p class="game-desc">字的颜色是什么？不要管字本身的内容！</p><h1 id="colorText" style="font-size:48px;margin:15px;color:red;">红色</h1><div class="color-btns" id="colorBtns"></div><div class="score-display">得分: <span id="colorScore">0</span></div><button class="btn btn-secondary" id="colorReset">🔄 重新开始</button></div>
+<!-- 15: 掷骰子 -->
+<div class="game-panel" id="game-15"><span class="source-tag source-db">豆包</span><h2>🎲 掷骰子比大小</h2><p class="game-desc">和电脑比掷骰子，谁大谁赢！</p><div class="dice-display"><div class="dice-box">你<div id="userDice">🎲</div></div><div class="dice-box">电脑<div id="cpuDice">🎲</div></div></div><button class="btn btn-primary" id="rollDiceBtn">🎲 掷骰子！</button><div class="score-display" id="diceResult" style="margin-top:10px;"></div></div>
+<!-- 16: 速算 -->
+<div class="game-panel" id="game-16"><span class="source-tag source-db">豆包</span><h2>🧮 速算大师</h2><p class="game-desc">30秒内尽可能多地答对算术题！</p><h1 id="mathQuestion" style="font-size:42px;margin:15px;">5 + 3 = ?</h1><input type="number" class="game-input" id="mathInput" placeholder="输入答案" style="width:120px;"><button class="btn btn-primary" id="mathSubmit">确定</button><div class="score-display">得分: <span id="mathScore">0</span> | 倒计时: <span id="mathTime">30</span>秒</div><button class="btn btn-secondary" id="mathStartBtn">▶️ 开始</button></div>
+
+<!-- 17: 像素世界 (🦐 小龙虾) 内置 -->
+<div class="game-panel" id="game-17" style="padding:0;overflow:hidden;">
+  <iframe id="pixelFrame" style="width:100%;height:78vh;border:none;border-radius:10px;" src="像素世界.html"></iframe>
+</div>
+
+</div><!-- end main-container -->
+
+<script>
+// ==================== 导航系统 ====================
+const navTabs = document.querySelectorAll('.nav-tab');
+const gamePanels = document.querySelectorAll('.game-panel');
+let currentGame = 0;
+
+function switchGame(index) {
+  currentGame = index;
+  navTabs.forEach(t => t.classList.remove('active'));
+  gamePanels.forEach(p => p.classList.remove('active'));
+  navTabs[index].classList.add('active');
+  gamePanels[index].classList.add('active');
+  if (index === 4) initSnake();
+  if (index === 8) initBrick();
+  if (index === 5 && game2048Grid.length === 0) init2048();
+}
+
+navTabs.forEach(tab => {
+  tab.addEventListener('click', () => { switchGame(parseInt(tab.dataset.game)); });
+});
+
+// ==================== 0: 猜数字 (Deepseek) ====================
+let guessTarget = Math.floor(Math.random()*100)+1, guessChances=10;
+const guessHint=document.getElementById('guess-hint'), guessInput=document.getElementById('guess-input');
+function resetGuess(){
+  guessTarget=Math.floor(Math.random()*100)+1; guessChances=10;
+  guessHint.textContent='🤔 准备好了吗？'; guessInput.value='';
+  document.getElementById('guess-chances').textContent='10';
+  guessInput.disabled=false; document.getElementById('guess-submit').disabled=false;
+}
+document.getElementById('guess-submit').addEventListener('click',()=>{
+  const val=parseInt(guessInput.value);
+  if(isNaN(val)||val<1||val>100){guessHint.textContent='⚠️ 请输入1~100之间的数字';return}
+  guessChances--; document.getElementById('guess-chances').textContent=guessChances;
+  if(val===guessTarget){guessHint.textContent='🎉 猜对了！答案是 '+guessTarget;document.getElementById('guess-submit').disabled=true;guessInput.disabled=true}
+  else if(guessChances<=0){guessHint.textContent='😢 机会用完了，答案是 '+guessTarget;document.getElementById('guess-submit').disabled=true;guessInput.disabled=true}
+  else if(val<guessTarget)guessHint.textContent='📈 太小了';
+  else guessHint.textContent='📉 太大了';
+  guessInput.value='';guessInput.focus();
+});
+document.getElementById('guess-reset').addEventListener('click',resetGuess);
+guessInput.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('guess-submit').click()});
+
+// ==================== 1: 石头剪刀布 (Deepseek) ====================
+let rpsP=0,rpsC=0;
+const rpsR=document.getElementById('rps-result'),rpsPS=document.getElementById('rps-player-score'),rpsCS=document.getElementById('rps-computer-score');
+const rpsChoices=['rock','paper','scissors'],rpsEmoji={rock:'🪨',paper:'📄',scissors:'✂️'},rpsWin={rock:'scissors',paper:'rock',scissors:'paper'};
+document.querySelectorAll('.rps-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const p=b.dataset.choice,c=rpsChoices[Math.floor(Math.random()*3)];
+    let t='你：'+rpsEmoji[p]+' vs 电脑：'+rpsEmoji[c]+' — ';
+    if(p===c)t+='平局！🤝';
+    else if(rpsWin[p]===c){t+='你赢了！🎉';rpsP++}
+    else{t+='电脑赢了！😢';rpsC++}
+    rpsR.textContent=t;rpsPS.textContent=rpsP;rpsCS.textContent=rpsC;
+  });
+});
+document.getElementById('rps-reset').addEventListener('click',()=>{rpsP=0;rpsC=0;rpsPS.textContent='0';rpsCS.textContent='0';rpsR.textContent='选择你的手势吧'});
+
+// ==================== 2: 记忆翻牌 (Deepseek) ====================
+const memoryGrid=document.getElementById('memory-grid');
+const memoryScoreD=document.getElementById('memory-score');
+let memCards=[],memFlipped=[],memMatched=0,memLocked=false;
+const memEmojis=['🍎','🍋','🍇','🍓','🍒','🥝','🍑','🍌'];
+function initMemory(){
+  memMatched=0;memFlipped=[];memLocked=false;
+  memCards=[...memEmojis,...memEmojis].sort(()=>Math.random()-0.5);
+  memoryGrid.innerHTML='';
+  memCards.forEach((e,i)=>{
+    const c=document.createElement('div');c.className='cell cell-memory';
+    c.dataset.index=i;c.dataset.emoji=e;c.textContent='?';
+    c.addEventListener('click',()=>{
+      if(memLocked||c.classList.contains('flipped')||c.classList.contains('matched'))return;
+      if(memFlipped.length>=2)return;
+      c.classList.add('flipped');c.textContent=e;memFlipped.push(c);
+      if(memFlipped.length===2){
+        memLocked=true;
+        const [a,b]=memFlipped;
+        if(a.dataset.emoji===b.dataset.emoji){
+          a.classList.add('matched');b.classList.add('matched');memMatched++;
+          memoryScoreD.textContent='配对：'+memMatched+' / 8';
+          memFlipped=[];memLocked=false;
+          if(memMatched===8)memoryScoreD.textContent='🎉 全部找到！';
+        }else setTimeout(()=>{a.classList.remove('flipped');b.classList.remove('flipped');a.textContent='?';b.textContent='?';memFlipped=[];memLocked=false},700);
+      }
+    });
+    memoryGrid.appendChild(c);
+  });
+  memoryScoreD.textContent='配对：0 / 8';
+}
+document.getElementById('memory-reset').addEventListener('click',initMemory);
+initMemory();
+
+// ==================== 3: 打地鼠 (豆包60秒版) ====================
+let moleScore3=0,moleTime3=60,moleInt3=null,moleActive3=false;
+const moleBoard3=document.getElementById('moleBoard3');
+const moleScoreD3=document.getElementById('moleScore3'),moleTimeD3=document.getElementById('moleTime3');
+function initMole3(){
+  moleBoard3.innerHTML='';
+  for(let i=0;i<9;i++){
+    const d=document.createElement('div');d.className='hole';
+    d.innerHTML='<span class="mole">🐹</span>';
+    d.addEventListener('click',()=>{
+      const m=d.querySelector('.mole');
+      if(moleActive3&&m.classList.contains('up')){moleScore3++;moleScoreD3.textContent=moleScore3;m.classList.remove('up')}
+    });
+    moleBoard3.appendChild(d);
+  }
+}
+function startMole3(){
+  if(moleActive3)return;
+  moleScore3=0;moleTime3=60;moleActive3=true;
+  moleScoreD3.textContent='0';moleTimeD3.textContent='60';
+  document.querySelectorAll('#moleBoard3 .mole').forEach(m=>m.classList.remove('up'));
+  if(moleInt3)clearInterval(moleInt3);
+  moleInt3=setInterval(()=>{
+    document.querySelectorAll('#moleBoard3 .mole').forEach(m=>m.classList.remove('up'));
+    const r=Math.floor(Math.random()*9);
+    document.querySelectorAll('#moleBoard3 .mole')[r].classList.add('up');
+  },800);
+  const t=setInterval(()=>{
+    moleTime3--;moleTimeD3.textContent=moleTime3;
+    if(moleTime3<=0){
+      clearInterval(t);clearInterval(moleInt3);moleActive3=false;
+      document.querySelectorAll('#moleBoard3 .mole').forEach(m=>m.classList.remove('up'));
+      moleScoreD3.textContent='⏰ 结束！得分：'+moleScore3;
+    }
+  },1000);
+}
+document.getElementById('moleStart3').addEventListener('click',startMole3);
+initMole3();
+
+// ==================== 4: 贪吃蛇 (Deepseek) ====================
+const snakeCanvas=document.getElementById('snake-canvas');
+const snakeCtx=snakeCanvas.getContext('2d');
+let snake=[],snakeFood={},snakeDir={x:1,y:0},snakeNext={x:1,y:0},snakeScore=0,snakeOver=false,snakeLoop=null;
+const sG=20,sCol=snakeCanvas.width/sG,sRow=snakeCanvas.height/sG;
+function initSnake(){
+  if(snakeLoop)clearInterval(snakeLoop);
+  snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  snakeDir={x:1,y:0};snakeNext={x:1,y:0};snakeScore=0;snakeOver=false;
+  document.getElementById('snake-score').textContent='得分：0';
+  placeFood();
+  if(snakeLoop)clearInterval(snakeLoop);
+  snakeLoop=setInterval(updateSnake,120);
+}
+function placeFood(){do{snakeFood={x:Math.floor(Math.random()*sCol),y:Math.floor(Math.random()*sRow)}}while(snake.some(s=>s.x===snakeFood.x&&s.y===snakeFood.y))}
+function updateSnake(){
+  if(snakeOver)return;snakeDir={...snakeNext};
+  const h={x:snake[0].x+snakeDir.x,y:snake[0].y+snakeDir.y};
+  if(h.x<0||h.x>=sCol||h.y<0||h.y>=sRow||snake.some(s=>s.x===h.x&&s.y===h.y)){
+    snakeOver=true;clearInterval(snakeLoop);drawSnake();document.getElementById('snake-score').textContent='💀 游戏结束！得分：'+snakeScore;return;
+  }
+  snake.unshift(h);
+  if(h.x===snakeFood.x&&h.y===snakeFood.y){snakeScore+=10;document.getElementById('snake-score').textContent='得分：'+snakeScore;placeFood()}
+  else snake.pop();
+  drawSnake();
+}
+function drawSnake(){
+  snakeCtx.fillStyle='#0f0f1a';snakeCtx.fillRect(0,0,snakeCanvas.width,snakeCanvas.height);
+  snakeCtx.fillStyle='#ff6b6b';snakeCtx.fillRect(snakeFood.x*sG+2,snakeFood.y*sG+2,sG-4,sG-4);
+  snakeCtx.fillStyle='#ffe66d';snakeCtx.beginPath();snakeCtx.arc(snakeFood.x*sG+sG/2,snakeFood.y*sG+sG/2,sG/2-2,0,Math.PI*2);snakeCtx.fill();
+  snake.forEach((s,i)=>{
+    const g=snakeCtx.createRadialGradient(s.x*sG+sG/2,s.y*sG+sG/2,1,s.x*sG+sG/2,s.y*sG+sG/2,sG/2);
+    g.addColorStop(0,i===0?'#4ecdc4':'#a29bfe');g.addColorStop(1,i===0?'#2a9d8f':'#6c5ce7');
+    snakeCtx.fillStyle=g;snakeCtx.fillRect(s.x*sG+1,s.y*sG+1,sG-2,sG-2);
+  });
+}
+document.addEventListener('keydown',e=>{
+  if(currentGame!==4)return;
+  if(e.key==='ArrowUp'&&snakeDir.y!==1)snakeNext={x:0,y:-1};
+  if(e.key==='ArrowDown'&&snakeDir.y!==-1)snakeNext={x:0,y:1};
+  if(e.key==='ArrowLeft'&&snakeDir.x!==1)snakeNext={x:-1,y:0};
+  if(e.key==='ArrowRight'&&snakeDir.x!==-1)snakeNext={x:1,y:0};
+});
+document.querySelectorAll('.snake-dir').forEach(b=>{b.addEventListener('click',()=>{const m={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}}[b.dataset.dir];const o={x:-snakeDir.x,y:-snakeDir.y};if(m.x!==o.x||m.y!==o.y)snakeNext=m})});
+document.getElementById('snake-reset').addEventListener('click',initSnake);
+initSnake();drawSnake();
+
+// ==================== 5: 2048 (Deepseek) ====================
+const grid2048=document.getElementById('grid2048');
+let game2048Grid=[],score2048=0;
+function init2048(){
+  game2048Grid=Array.from({length:4},()=>Array(4).fill(0));score2048=0;
+  document.getElementById('game2048-score').textContent='得分：0';
+  addR2048();addR2048();render2048();
+}
+function addR2048(){const e=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(game2048Grid[r][c]===0)e.push({r,c});if(e.length>0){const {r,c}=e[Math.floor(Math.random()*e.length)];game2048Grid[r][c]=Math.random()<0.9?2:4}}
+function render2048(){grid2048.innerHTML='';for(let r=0;r<4;r++)for(let c=0;c<4;c++){const cell=document.createElement('div');cell.className='cell cell-2048';const v=game2048Grid[r][c];cell.textContent=v>0?v:'';cell.dataset.value=v;grid2048.appendChild(cell)}}
+function slide2048(row){let a=row.filter(v=>v!==0);for(let i=0;i<a.length-1;i++)if(a[i]===a[i+1]){a[i]*=2;score2048+=a[i];a[i+1]=0}a=a.filter(v=>v!==0);while(a.length<4)a.push(0);return a}
+function move2048(dir){
+  const old=game2048Grid.map(r=>[...r]);
+  if(dir==='left')for(let r=0;r<4;r++)game2048Grid[r]=slide2048(game2048Grid[r]);
+  else if(dir==='right')for(let r=0;r<4;r++)game2048Grid[r]=slide2048([...game2048Grid[r]].reverse()).reverse();
+  else if(dir==='up'){for(let c=0;c<4;c++){const col=slide2048([game2048Grid[0][c],game2048Grid[1][c],game2048Grid[2][c],game2048Grid[3][c]]);for(let r=0;r<4;r++)game2048Grid[r][c]=col[r]}}
+  else if(dir==='down'){for(let c=0;c<4;c++){const col=slide2048([game2048Grid[3][c],game2048Grid[2][c],game2048Grid[1][c],game2048Grid[0][c]]).reverse();for(let r=0;r<4;r++)game2048Grid[r][c]=col[r]}}
+  const changed=old.some((r,i)=>r.some((v,j)=>v!==game2048Grid[i][j]));
+  if(changed){addR2048();document.getElementById('game2048-score').textContent='得分：'+score2048;render2048();if(game2048Grid.some(r=>r.includes(2048)))document.getElementById('game2048-score').textContent='🎉 2048！得分：'+score2048}
+}
+document.addEventListener('keydown',e=>{
+  if(currentGame!==5)return;
+  if(e.key==='ArrowUp'){e.preventDefault();move2048('up')}
+  if(e.key==='ArrowDown'){e.preventDefault();move2048('down')}
+  if(e.key==='ArrowLeft'){e.preventDefault();move2048('left')}
+  if(e.key==='ArrowRight'){e.preventDefault();move2048('right')}
+});
+document.querySelectorAll('.dir2048').forEach(b=>{b.addEventListener('click',()=>move2048(b.dataset.dir))});
+document.getElementById('game2048-reset').addEventListener('click',init2048);
+init2048();
+
+// ==================== 6: 反应测试 (豆包版) ====================
+let reactState='waiting',reactTimeout=null,reactStart=0,reactBest=null;
+const reactArea=document.getElementById('reaction-area6'),reactResult=document.getElementById('reaction-result6');
+reactArea.addEventListener('click',()=>{
+  if(reactState==='waiting'){
+    reactState='readying';reactArea.className='reaction-area readying';reactArea.textContent='等待信号...';
+    reactTimeout=setTimeout(()=>{
+      reactState='ready';reactArea.className='reaction-area ready';reactArea.textContent='点击！';reactStart=Date.now();
+    },1000+Math.random()*4000);
+  }else if(reactState==='readying'){
+    clearTimeout(reactTimeout);reactState='waiting';reactArea.className='reaction-area waiting';reactArea.textContent='太早了！点击重试';
+  }else if(reactState==='ready'){
+    const rt=Date.now()-reactStart;reactState='result';reactArea.className='reaction-area result';reactArea.textContent=rt+' ms';
+    if(reactBest===null||rt<reactBest)reactBest=rt;reactResult.textContent='最近：'+rt+' ms | 最佳：'+reactBest+' ms';
+  }else{reactState='waiting';reactArea.className='reaction-area waiting';reactArea.textContent='等待中...点击开始'}
+});
+document.getElementById('reaction-reset6').addEventListener('click',()=>{clearTimeout(reactTimeout);reactState='waiting';reactArea.className='reaction-area waiting';reactArea.textContent='等待中...点击开始';reactResult.textContent='最佳成绩：-- ms';reactBest=null;});
+
+// ==================== 7: 打字速度 (Deepseek) ====================
+const typingDisplay=document.getElementById('typing-display'),typingInput=document.getElementById('typing-input'),typingResult=document.getElementById('typing-result');
+const typingSentences=['the quick brown fox jumps over the lazy dog','coding is fun and creative','practice makes perfect every day','keep calm and carry on typing','hello world this is a typing test','speed and accuracy are both important','learning new skills is always rewarding','the sun rises in the east every morning'];
+let typingTarget='',typingStart=0,typingActive=false,typingPos=0,typingErrors=0;
+function updateTypingDisplay(){
+  let h='';
+  for(let i=0;i<typingTarget.length;i++){
+    if(i<typingPos)h+='<span class="correct">'+typingTarget[i]+'</span>';
+    else if(i===typingPos&&typingActive)h+='<span class="current">'+(typingTarget[i]||' ')+'</span>';
+    else h+=typingTarget[i];
+  }
+  typingDisplay.innerHTML=h;
+}
+function startTyping(){
+  typingTarget=typingSentences[Math.floor(Math.random()*typingSentences.length)];typingPos=0;typingErrors=0;
+  typingActive=true;typingInput.disabled=false;typingInput.value='';typingInput.focus();
+  typingStart=performance.now();typingResult.textContent='WPM：-- | 准确率：--';updateTypingDisplay();
+}
+typingInput.addEventListener('input',()=>{
+  if(!typingActive)return;const t=typingInput.value;typingPos=0;typingErrors=0;
+  for(let i=0;i<t.length;i++){if(i<typingTarget.length&&t[i]===typingTarget[i])typingPos=i+1;else if(i<typingTarget.length){typingErrors++;typingPos=i+1}}
+  updateTypingDisplay();
+  if(typingPos>=typingTarget.length&&t.length>=typingTarget.length){
+    typingActive=false;typingInput.disabled=true;
+    const e=(performance.now()-typingStart)/60000,w=typingTarget.split(' ').length;
+    typingResult.textContent='WPM：'+Math.round(w/e)+' | 准确率：'+Math.round(((typingTarget.length-typingErrors)/typingTarget.length)*100)+'%';
+    typingDisplay.innerHTML='<span class="correct">'+typingTarget+'</span> ✅';
+  }
+});
+document.getElementById('typing-start').addEventListener('click',startTyping);
+updateTypingDisplay();
+
+// ==================== 8: 打砖块 (Deepseek) ====================
+const brickCanvas=document.getElementById('brick-canvas'),brickCtx=brickCanvas.getContext('2d');
+let bPaddle={x:160,y:320,w:80,h:14},bBall={x:200,y:300,vx:3,vy:-3,r:7},bBricks=[],bScore=0,bLives=3,bLoop=null,bActive=false;
+function initBrick(){
+  if(bLoop)clearInterval(bLoop);
+  bPaddle={x:160,y:320,w:80,h:14};bBall={x:200,y:300,vx:3,vy:-3,r:7};bBricks=[];bScore=0;bLives=3;bActive=true;
+  document.getElementById('brick-score').innerHTML='得分：0 | ❤️ <span id="brick-lives">3</span>';
+  const cs=['#ff6b6b','#feca57','#4ecdc4','#a29bfe','#ff9ff3'];
+  for(let r=0;r<5;r++)for(let c=0;c<8;c++)bBricks.push({x:c*50+5,y:r*28+10,w:44,h:22,color:cs[r],alive:true});
+  if(bLoop)clearInterval(bLoop);bLoop=setInterval(updateBrick,20);drawBrick();
+}
+function updateBrick(){
+  if(!bActive)return;
+  bBall.x+=bBall.vx;bBall.y+=bBall.vy;
+  if(bBall.x-bBall.r<=0||bBall.x+bBall.r>=brickCanvas.width)bBall.vx*=-1;
+  if(bBall.y-bBall.r<=0)bBall.vy*=-1;
+  if(bBall.y+bBall.r>=bPaddle.y&&bBall.y+bBall.r<=bPaddle.y+bPaddle.h+8&&bBall.x>bPaddle.x-bBall.r&&bBall.x<bPaddle.x+bPaddle.w+bBall.r&&bBall.vy>0){
+    bBall.vy*=-1;const hp=(bBall.x-bPaddle.x)/bPaddle.w;bBall.vx=(hp-0.5)*8;if(Math.abs(bBall.vx)<1.5)bBall.vx=bBall.vx>0?2:-2;
+  }
+  if(bBall.y+bBall.r>=brickCanvas.height){bLives--;document.getElementById('brick-lives').textContent=bLives;document.getElementById('brick-score').innerHTML='得分：'+bScore+' | ❤️ <span id="brick-lives">'+bLives+'</span>';if(bLives<=0){bActive=false;clearInterval(bLoop);document.getElementById('brick-score').innerHTML='💀 结束！得分：'+bScore+' | ❤️ <span id="brick-lives">0</span>'}else{bBall={x:200,y:280,vx:3,vy:-3,r:7};bPaddle.x=160}}
+  bBricks.forEach(b=>{if(!b.alive)return;if(bBall.x+bBall.r>b.x&&bBall.x-bBall.r<b.x+b.w&&bBall.y+bBall.r>b.y&&bBall.y-bBall.r<b.y+b.h){b.alive=false;bBall.vy*=-1;bScore+=10;document.getElementById('brick-score').innerHTML='得分：'+bScore+' | ❤️ <span id="brick-lives">'+bLives+'</span>';if(bBricks.every(b=>!b.alive)){bActive=false;clearInterval(bLoop);document.getElementById('brick-score').innerHTML='🎉 全清！得分：'+bScore+' | ❤️ <span id="brick-lives">'+bLives+'</span>'}}});
+  drawBrick();
+}
+function drawBrick(){brickCtx.fillStyle='#0f0f1a';brickCtx.fillRect(0,0,brickCanvas.width,brickCanvas.height);bBricks.forEach(b=>{if(!b.alive)return;brickCtx.fillStyle=b.color;brickCtx.fillRect(b.x,b.y,b.w,b.h);brickCtx.strokeStyle='rgba(255,255,255,0.2)';brickCtx.strokeRect(b.x,b.y,b.w,b.h)});brickCtx.fillStyle='#4ecdc4';brickCtx.fillRect(bPaddle.x,bPaddle.y,bPaddle.w,bPaddle.h);brickCtx.fillStyle='#fff';brickCtx.beginPath();brickCtx.arc(bBall.x,bBall.y,bBall.r,0,Math.PI*2);brickCtx.fill();brickCtx.fillStyle='#ffe66d';brickCtx.beginPath();brickCtx.arc(bBall.x,bBall.y,bBall.r-3,0,Math.PI*2);brickCtx.fill();}
+document.addEventListener('keydown',e=>{if(currentGame!==8||!bActive)return;if(e.key==='ArrowLeft')bPaddle.x=Math.max(0,bPaddle.x-20);if(e.key==='ArrowRight')bPaddle.x=Math.min(brickCanvas.width-bPaddle.w,bPaddle.x+20);});
+document.querySelector('.brick-left').addEventListener('click',()=>{if(bActive)bPaddle.x=Math.max(0,bPaddle.x-20)});
+document.querySelector('.brick-right').addEventListener('click',()=>{if(bActive)bPaddle.x=Math.min(brickCanvas.width-bPaddle.w,bPaddle.x+20)});
+document.getElementById('brick-reset').addEventListener('click',initBrick);
+initBrick();drawBrick();
+
+// ==================== 9: 井字棋 (Deepseek) ====================
+const ticGrid=document.getElementById('tic-grid'),ticResult=document.getElementById('tic-result');
+let ticBoard=Array(9).fill(null),ticPlayerTurn=true,ticOver=false,ticWins=0,ticLosses=0,ticDraws=0;
+const winLines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function initTic(){ticBoard=Array(9).fill(null);ticPlayerTurn=true;ticOver=false;ticResult.textContent='你的回合 (X)';ticGrid.innerHTML='';for(let i=0;i<9;i++){const c=document.createElement('div');c.className='cell cell-tic';c.dataset.index=i;c.addEventListener('click',()=>ticClick(i,c));ticGrid.appendChild(c)}}
+function checkTic(board){for(const[a,b,c]of winLines){if(board[a]&&board[a]===board[b]&&board[a]===board[c])return{winner:board[a],line:[a,b,c]}}if(board.every(c=>c!==null))return{winner:'draw',line:[]};return null}
+function ticClick(i,cell){if(!ticPlayerTurn||ticOver||ticBoard[i]!==null)return;ticBoard[i]='X';cell.textContent='X';cell.classList.add('x');const r=checkTic(ticBoard);if(r){ticOver=true;if(r.winner==='X'){ticWins++;ticResult.textContent='🎉 你赢了！';r.line.forEach(i=>ticGrid.children[i].classList.add('win'))}else if(r.winner==='draw'){ticDraws++;ticResult.textContent='🤝 平局！'}updateTicScores();return}ticPlayerTurn=false;ticResult.textContent='电脑思考中...';setTimeout(computerMove,400);}
+function computerMove(){if(ticOver)return;const empty=ticBoard.map((v,i)=>v===null?i:null).filter(v=>v!==null);let move=null;for(const i of empty){const t=[...ticBoard];t[i]='O';if(checkTic(t)?.winner==='O'){move=i;break}}if(move===null)for(const i of empty){const t=[...ticBoard];t[i]='X';if(checkTic(t)?.winner==='X'){move=i;break}}if(move===null)move=empty.includes(4)?4:empty[Math.floor(Math.random()*empty.length)];ticBoard[move]='O';const cell=ticGrid.children[move];cell.textContent='O';cell.classList.add('o');const r=checkTic(ticBoard);if(r){ticOver=true;if(r.winner==='O'){ticLosses++;ticResult.textContent='😢 电脑赢了！';r.line.forEach(i=>ticGrid.children[i].classList.add('win'))}else if(r.winner==='draw'){ticDraws++;ticResult.textContent='🤝 平局！'}updateTicScores()}else{ticPlayerTurn=true;ticResult.textContent='你的回合 (X)'}}
+function updateTicScores(){document.getElementById('tic-player').textContent=ticWins;document.getElementById('tic-computer').textContent=ticLosses;document.getElementById('tic-draw').textContent=ticDraws}
+document.getElementById('tic-reset').addEventListener('click',initTic);
+initTic();
+
+// ==================== 10: 弹球躲避 (Kimi) ====================
+function initDodge(){const canvas=document.getElementById('dodgeCanvas');const ctx=canvas.getContext('2d');let player={x:180,y:400,size:40},balls=[],score=0,over=false;document.getElementById('dodgeScore').textContent='0';canvas.addEventListener('mousemove',function moveHandler(e){if(currentGame!==10)return;const r=canvas.getBoundingClientRect();player.x=e.clientX-r.left-player.size/2;player.x=Math.max(0,Math.min(canvas.width-player.size,player.x));});function loop(){if(currentGame!==10||over)return;if(Math.random()<0.03)balls.push({x:Math.random()*canvas.width,y:-20,radius:Math.random()*15+10,speed:Math.random()*3+2});ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#3498db';ctx.fillRect(player.x,player.y,player.size,player.size);balls=balls.filter(b=>{b.y+=b.speed;ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.fillStyle='#ecf0f1';ctx.fill();const cx=player.x+player.size/2,cy=player.y+player.size/2,dist=Math.sqrt((b.x-cx)**2+(b.y-cy)**2);if(dist<b.radius+player.size/2){over=true;ctx.fillStyle='#fff';ctx.font='30px Arial';ctx.fillText('游戏结束!',120,250);return false}if(b.y>canvas.height){score++;document.getElementById('dodgeScore').textContent=score;return false}return true;});if(!over)requestAnimationFrame(loop);}requestAnimationFrame(loop);}
+
+// ==================== 11: 快速点击 (Kimi) ====================
+function initClickSpeed(){const area=document.getElementById('clickArea');let clicks=0,timeLeft=10,started=false,gameOver=false;document.getElementById('clickTime').textContent='10';document.getElementById('clickCount').textContent='0';document.getElementById('cpsVal').textContent='0';area.style.background='linear-gradient(135deg,#667eea,#764ba2)';area.textContent='点击这里！';area.style.cursor='pointer';area.onclick=function(){if(gameOver)return;if(!started){started=true;const t=setInterval(()=>{if(currentGame!==11){clearInterval(t);return}timeLeft--;document.getElementById('clickTime').textContent=timeLeft;if(timeLeft<=0){clearInterval(t);gameOver=true;area.style.background='#e74c3c';area.textContent='时间到！';document.getElementById('cpsVal').textContent=(clicks/10).toFixed(2)}},1000);}if(!gameOver){clicks++;document.getElementById('clickCount').textContent=clicks;if(timeLeft<10)document.getElementById('cpsVal').textContent=(clicks/(10-timeLeft)).toFixed(2)}};}
+
+// ==================== 12: 迷宫 (Kimi) ====================
+function initMaze(){const canvas=document.getElementById('mazeCanvas');const ctx=canvas.getContext('2d');const size=20,cols=20,rows=20;let maze=[],player={x:0,y:0},exit={x:cols-1,y:rows-1};for(let r=0;r<rows;r++){maze[r]=[];for(let c=0;c<cols;c++)maze[r][c]=1}function gen(x,y){maze[y][x]=0;const dirs=[[0,-2],[2,0],[0,2],[-2,0]].sort(()=>Math.random()-0.5);for(let[dx,dy]of dirs){const nx=x+dx,ny=y+dy;if(nx>=0&&nx<cols&&ny>=0&&ny<rows&&maze[ny][nx]===1){maze[y+dy/2][x+dx/2]=0;gen(nx,ny)}}}gen(0,0);maze[0][0]=0;maze[rows-1][cols-1]=0;if(maze[rows-2][cols-1]===1&&maze[rows-1][cols-2]===1)maze[rows-1][cols-2]=0;function draw(){ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,canvas.width,canvas.height);for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(maze[r][c]===1){ctx.fillStyle='#667eea';ctx.fillRect(c*size,r*size,size-1,size-1)}}ctx.fillStyle='#e74c3c';ctx.fillRect(exit.x*size+2,exit.y*size+2,size-4,size-4);ctx.fillStyle='#3498db';ctx.fillRect(player.x*size+2,player.y*size+2,size-4,size-4);}function keyHandler(e){if(currentGame!==12)return;let nx=player.x,ny=player.y;switch(e.key){case'ArrowUp':ny--;break;case'ArrowDown':ny++;break;case'ArrowLeft':nx--;break;case'ArrowRight':nx++;break;default:return}if(nx>=0&&nx<cols&&ny>=0&&ny<rows&&maze[ny][nx]===0){player.x=nx;player.y=ny;draw();if(player.x===exit.x&&player.y===exit.y){ctx.fillStyle='rgba(0,0,0,0.8)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#4ade80';ctx.font='30px Arial';ctx.fillText('🎉 你逃出了迷宫!',50,200)}}}document.removeEventListener('keydown',keyHandler);document.addEventListener('keydown',keyHandler);draw();}
+
+// ==================== 13: 太空射击 (Kimi) ====================
+function initShooter(){const canvas=document.getElementById('shooterCanvas');const ctx=canvas.getContext('2d');let ship={x:200,y:400,width:30,height:30},bullets=[],enemies=[],score=0,lives=3,keys={},over=false;document.getElementById('shooterScore').textContent='0';document.getElementById('shooterLives').textContent='3';function kd(e){if(currentGame!==13)return;keys[e.key]=true;if(e.key===' '){e.preventDefault();bullets.push({x:ship.x+ship.width/2,y:ship.y})}}function ku(e){keys[e.key]=false}document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);function loop(){if(currentGame!==13||over)return;if(keys['ArrowLeft']&&ship.x>0)ship.x-=5;if(keys['ArrowRight']&&ship.x<canvas.width-ship.width)ship.x+=5;if(Math.random()<0.02)enemies.push({x:Math.random()*(canvas.width-30),y:-30,width:30,height:30,speed:Math.random()*2+1});bullets=bullets.filter(b=>{b.y-=8;return b.y>0});enemies=enemies.filter(e=>{e.y+=e.speed;for(let i=bullets.length-1;i>=0;i--){if(bullets[i].x>e.x&&bullets[i].x<e.x+e.width&&bullets[i].y>e.y&&bullets[i].y<e.y+e.height){bullets.splice(i,1);score+=10;document.getElementById('shooterScore').textContent=score;return false}}if(e.y+e.height>ship.y&&e.x<ship.x+ship.width&&e.x+e.width>ship.x){lives--;document.getElementById('shooterLives').textContent=lives;if(lives<=0){over=true;ctx.fillStyle='rgba(0,0,0,0.8)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#fff';ctx.font='30px Arial';ctx.fillText('游戏结束!',130,250)}return false}return e.y<canvas.height;});ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#3498db';ctx.beginPath();ctx.moveTo(ship.x+ship.width/2,ship.y);ctx.lineTo(ship.x,ship.y+ship.height);ctx.lineTo(ship.x+ship.width,ship.y+ship.height);ctx.closePath();ctx.fill();ctx.fillStyle='#f1c40f';bullets.forEach(b=>{ctx.fillRect(b.x-2,b.y,4,10)});ctx.fillStyle='#e74c3c';enemies.forEach(e=>{ctx.fillRect(e.x,e.y,e.width,e.height)});if(!over)requestAnimationFrame(loop);}requestAnimationFrame(loop);}
+
+// ==================== 14: 颜色匹配 (豆包) ====================
+const colors=['red','blue','green','yellow','purple','orange'];const colorNames={red:'红色',blue:'蓝色',green:'绿色',yellow:'黄色',purple:'紫色',orange:'橙色'};let colorScoreVal=0;
+function initColor(){colorScoreVal=0;document.getElementById('colorScore').textContent='0';nextColor();const btnDiv=document.getElementById('colorBtns');btnDiv.innerHTML='';colors.forEach(c=>{const b=document.createElement('button');b.className='color-btn';b.style.backgroundColor=c;b.textContent=colorNames[c];b.addEventListener('click',()=>checkColor(c));btnDiv.appendChild(b)});}
+function nextColor(){const tc=colors[Math.floor(Math.random()*colors.length)],wc=colors[Math.floor(Math.random()*colors.length)];const el=document.getElementById('colorText');el.style.color=tc;el.textContent=colorNames[wc];el.dataset.answer=tc;}
+function checkColor(g){if(g===document.getElementById('colorText').dataset.answer)colorScoreVal++;document.getElementById('colorScore').textContent=colorScoreVal;nextColor()}
+document.getElementById('colorReset').addEventListener('click',initColor);initColor();
+
+// ==================== 15: 掷骰子 (豆包) ====================
+const diceEmojis=['⚀','⚁','⚂','⚃','⚄','⚅'];
+document.getElementById('rollDiceBtn').addEventListener('click',()=>{const u=Math.floor(Math.random()*6),c=Math.floor(Math.random()*6);document.getElementById('userDice').textContent=diceEmojis[u];document.getElementById('cpuDice').textContent=diceEmojis[c];let r='';if(u>c)r='🎉 你赢了！';else if(u<c)r='😢 电脑赢了！';else r='🤝 平局！';document.getElementById('diceResult').textContent=r;});
+
+// ==================== 16: 速算大师 (豆包) ====================
+let mathAns=0,mathScoreVal=0,mathTimer=null,mathTimeLeft=30,mathActive=false;
+const mathQ=document.getElementById('mathQuestion'),mathI=document.getElementById('mathInput'),mathScoreD=document.getElementById('mathScore'),mathTimeD=document.getElementById('mathTime');
+function nextMath(){const a=Math.floor(Math.random()*50)+1,b=Math.floor(Math.random()*50)+1,add=Math.random()>0.5;mathAns=add?a+b:a-b;mathQ.textContent=(add?a+' + '+b:a+' - '+b)+' = ?';mathI.value='';mathI.focus();}
+function startMath(){if(mathActive)return;mathActive=true;mathScoreVal=0;mathTimeLeft=30;mathScoreD.textContent='0';mathTimeD.textContent='30';mathI.disabled=false;if(mathTimer)clearInterval(mathTimer);nextMath();mathTimer=setInterval(()=>{mathTimeLeft--;mathTimeD.textContent=mathTimeLeft;if(mathTimeLeft<=0){clearInterval(mathTimer);mathI.disabled=true;mathActive=false;mathTimeD.textContent='0';alert('⏰ 时间到！得分: '+mathScoreVal)}},1000);}
+document.getElementById('mathSubmit').addEventListener('click',()=>{if(!mathActive)return;const v=parseInt(mathI.value);if(v===mathAns)mathScoreVal+=10;mathScoreD.textContent=mathScoreVal;nextMath();});
+mathI.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('mathSubmit').click()});
+document.getElementById('mathStartBtn').addEventListener('click',startMath);
+</script>
+</body>
+</html>
