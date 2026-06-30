@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>飞信 AI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:"Segoe UI","PingFang SC",sans-serif;background:#0a0a1a;color:white}
+.w{display:flex;flex-direction:column;height:100%}
+.h{display:flex;align-items:center;padding:12px 16px;background:rgba(20,20,50,0.95);border-bottom:1px solid rgba(255,255,255,0.1);gap:12px}
+.h button{background:none;border:none;font-size:1.5rem;cursor:pointer;color:white}
+.h .ti{font-weight:600}
+.h .st{font-size:0.75rem;opacity:0.6}
+.m{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:80%;padding:10px 14px;border-radius:18px;line-height:1.4;word-break:break-word;animation:in 0.3s}
+.msg.u{align-self:flex-end;background:#4f6ef7;color:white}
+.msg.a{align-self:flex-start;background:rgba(255,255,255,0.15);color:white}
+.msg.e{align-self:center;background:rgba(255,80,80,0.3);color:#ffb0b0;font-size:0.85rem;text-align:center}
+.inp{display:flex;padding:10px;background:rgba(20,20,50,0.95);border-top:1px solid rgba(255,255,255,0.1);gap:8px}
+.inp input{flex:1;padding:10px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);outline:none;background:rgba(0,0,0,0.3);color:white}
+.inp button{padding:10px 18px;border:none;border-radius:20px;background:#4f6ef7;color:white;cursor:pointer}
+.inp button:disabled{opacity:0.5}
+.sp{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10;backdrop-filter:blur(10px)}
+.sp.hi{display:none}
+.sc{background:rgba(30,30,60,0.95);border-radius:16px;padding:20px;width:90%;max-width:320px;display:flex;flex-direction:column;gap:10px;border:1px solid rgba(255,255,255,0.2)}
+.sc input,.sc select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);background:rgba(0,0,0,0.3);color:white}
+.sc button{padding:10px;border:none;border-radius:10px;cursor:pointer}
+.bp{background:#4f6ef7;color:white}
+.bs{background:rgba(255,255,255,0.2);color:white}
+.br{display:flex;gap:8px}
+.br button{flex:1}
+.we{text-align:center;color:rgba(255,255,255,0.5);padding:20px;font-size:0.9rem}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes p{0%,100%{opacity:0.4}50%{opacity:1}}
+.td{display:flex;gap:4px;padding:4px 0;justify-content:center}
+.td span{width:6px;height:6px;background:rgba(255,255,255,0.6);border-radius:50%;animation:p 1.2s infinite}
+.td span:nth-child(2){animation-delay:0.2s}
+.td span:nth-child(3){animation-delay:0.4s}
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="h">
+    <button id="mb">☰</button>
+    <div><div class="ti">飞信 AI</div><div class="st" id="st">就绪</div></div>
+  </div>
+  <div class="m" id="ml"></div>
+  <div class="inp">
+    <input type="text" id="ui" placeholder="输入消息..." disabled>
+    <button id="sb" disabled>发送</button>
+  </div>
+</div>
+<div class="sp hi" id="sp">
+  <div class="sc">
+    <h3 style="text-align:center">⚙️ API 设置</h3>
+    <label>提供商</label>
+    <select id="ps"><option value="deepseek">DeepSeek</option><option value="openai">OpenAI 兼容</option></select>
+    <label>API Key</label>
+    <input type="password" id="ak" placeholder="sk-...">
+    <label>API Base URL</label>
+    <input type="text" id="ab" placeholder="https://api.deepseek.com" value="https://api.deepseek.com">
+    <label>模型</label>
+    <input type="text" id="mi" placeholder="deepseek-chat" value="deepseek-chat">
+    <div class="br">
+      <button class="bp" id="ssb">保存</button>
+      <button class="bs" id="csb">取消</button>
+    </div>
+  </div>
+</div>
+<div id="ld" class="td" style="display:none;padding:8px"><span></span><span></span><span></span></div>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var apiKey="",model="deepseek-chat",provider="deepseek",apiBase="https://api.deepseek.com",messages=[];
+try{
+  apiKey=localStorage.getItem("fk_key")||"";
+  model=localStorage.getItem("fk_model")||"deepseek-chat";
+  provider=localStorage.getItem("fk_provider")||"deepseek";
+  apiBase=localStorage.getItem("fk_base")||"https://api.deepseek.com";
+  var saved=localStorage.getItem("fk_messages");
+  if(saved){messages=JSON.parse(saved);if(!Array.isArray(messages))messages=[]}
+}catch(e){messages=[]}
+$("ak").value=apiKey;$("mi").value=model;$("ps").value=provider;$("ab").value=apiBase;
+
+function uu(){
+  var hk=!!apiKey;
+  $("ui").disabled=!hk;$("sb").disabled=!hk;
+  $("st").textContent=hk?"已配置":"未配置 API Key";
+}
+uu();
+
+function rm(){
+  var c=$("ml");c.innerHTML="";
+  if(messages.length===0){
+    c.innerHTML='<div class="we">\u{1f44b} 欢迎使用飞信 AI<br>请在设置中配置 API Key</div>';
+    return;
+  }
+  messages.forEach(function(m){
+    var d=document.createElement("div");
+    d.className="msg "+(m.role==="user"?"u":"a");
+    d.textContent=m.content;
+    c.appendChild(d);
+  });
+  c.scrollTop=c.scrollHeight;
+}
+rm();
+
+function showLoading(){$("ld").style.display="flex";$("ui").disabled=true;$("sb").disabled=true}
+function hideLoading(){$("ld").style.display="none";uu()}
+
+function addMessage(role,content){
+  messages.push({role:role,content:content});
+  try{localStorage.setItem("fk_messages",JSON.stringify(messages))}catch(e){}
+  rm();
+}
+
+async function send(){
+  var input=$("ui"),text=input.value.trim();
+  if(!text||!apiKey)return;
+  input.value="";addMessage("user",text);showLoading();
+  var url=provider==="deepseek"?"https://api.deepseek.com/v1/chat/completions":apiBase+"/v1/chat/completions";
+  var body=JSON.stringify({model:model,messages:messages.slice(-20),stream:false});
+  try{
+    var r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+apiKey},body:body});
+    var d=await r.json();hideLoading();
+    if(d.choices&&d.choices[0]){addMessage("assistant",d.choices[0].message.content)}
+    else{addMessage("system","错误: "+(d.error?d.error.message:"未知响应"))}
+  }catch(e){hideLoading();addMessage("system","网络错误: "+e.message)}
+}
+
+$("sb").onclick=send;
+$("ui").addEventListener("keydown",function(e){if(e.key==="Enter")send()});
+$("mb").onclick=function(){$("sp").classList.toggle("hi")};
+$("ssb").onclick=function(){
+  apiKey=$("ak").value.trim();model=$("mi").value.trim()||"deepseek-chat";
+  provider=$("ps").value;apiBase=$("ab").value.trim()||"https://api.deepseek.com";
+  localStorage.setItem("fk_key",apiKey);localStorage.setItem("fk_model",model);
+  localStorage.setItem("fk_provider",provider);localStorage.setItem("fk_base",apiBase);
+  $("sp").classList.add("hi");uu();
+  if(apiKey)alert("API 已配置！现在可以开始聊天了。");
+};
+$("csb").onclick=function(){
+  $("ak").value=apiKey;$("mi").value=model;$("ps").value=provider;$("ab").value=apiBase;
+  $("sp").classList.add("hi");
+};
+$("ps").onchange=function(){
+  var v=$("ps").value;
+  if(v==="deepseek"){$("ab").value="https://api.deepseek.com";$("mi").value="deepseek-chat"}
+  else{$("ab").value="https://api.openai.com";$("mi").value="gpt-3.5-turbo"}
+};
+})();
+</script>
+</body>
+</html>

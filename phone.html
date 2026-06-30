@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Apos · 液态星云</title>
+  <style>
+    :root {
+      --bg-deep: #1a1a3e; --bg-darker: #0a0a1a;
+      --glass-bg: rgba(20,20,35,0.7); --glass-border: rgba(255,255,255,0.25);
+      --notification-bg: rgba(20,20,40,0.9);
+      --settings-bg: linear-gradient(140deg, rgba(255,255,255,0.32), rgba(255,255,255,0.08));
+      --splash-gradient: radial-gradient(circle at center, #1a1a3e 0%, #0a0a1a 100%);
+      --wallpaper-gradient: radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, #0a0a1a 70%);
+    }
+    .dark-mode {
+      --bg-deep: #0d0d1a; --bg-darker: #050510;
+      --glass-bg: rgba(10,10,25,0.8); --glass-border: rgba(200,200,255,0.15);
+      --notification-bg: rgba(10,10,25,0.95);
+      --settings-bg: linear-gradient(140deg, rgba(30,30,60,0.6), rgba(10,10,30,0.9));
+      --splash-gradient: radial-gradient(circle at center, #0d0d2a 0%, #050510 100%);
+      --wallpaper-gradient: radial-gradient(ellipse at 50% 30%, #0d0d2a 0%, #050510 70%);
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#000}
+    #app{position:fixed;top:0;left:0;width:100%;height:100%;user-select:none;-webkit-user-select:none}
+    #splashScreen{position:absolute;top:0;left:0;width:100%;height:100%;z-index:999;background:var(--splash-gradient);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform 0.8s cubic-bezier(0.4,0,0.2,1),opacity 0.8s}
+    #splashScreen.exit-animation{transform:translateY(-100%);opacity:0}
+    #splashCanvas{width:100%;height:100%;position:absolute}
+    .splash-text{z-index:10;color:white;text-align:center;transition:opacity 1s ease}
+    .splash-text .title{font-size:4rem;font-weight:300;letter-spacing:8px;text-shadow:0 0 30px rgba(100,150,255,0.8);animation:titleGlow 2s ease-in-out infinite alternate}
+    .splash-text .welcome{font-size:1.5rem;margin-top:20px;opacity:0.9}
+    @keyframes titleGlow{from{text-shadow:0 0 20px rgba(100,150,255,0.6)}to{text-shadow:0 0 40px rgba(100,150,255,1),0 0 80px rgba(100,150,255,0.6)}}
+    .particle-wallpaper{position:absolute;top:0;left:0;width:100%;height:100%;background:var(--wallpaper-gradient);z-index:0}
+    canvas#particleCanvas{position:absolute;top:0;left:0;width:100%;height:100%}
+    #lockScreen{position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:25vh;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)}
+    .lock-blur{position:absolute;top:0;left:0;width:100%;height:100%;backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);background:rgba(0,0,0,0.15);z-index:-1}
+    .lock-content{text-align:center;color:white;text-shadow:0 4px 20px rgba(0,0,0,0.6);z-index:1}
+    .lock-time{font-size:5em;font-weight:200;letter-spacing:4px}
+    .lock-date{font-size:1.2em;margin-top:12px;opacity:0.9}
+    #desktop{position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;display:flex;flex-direction:column}
+    .desktop-scroll{flex:1;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scroll-snap-type:x mandatory;padding-bottom:100px}
+    .desktop-page{display:inline-flex;flex-wrap:wrap;justify-content:flex-start;align-items:flex-start;gap:24px 20px;padding:30px 20px;width:100%;height:100%;white-space:normal;scroll-snap-align:start;vertical-align:top}
+    .app-icon{display:flex;flex-direction:column;align-items:center;cursor:pointer;width:80px;transition:transform 0.15s;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.4));position:relative}
+    .app-icon:active{transform:scale(0.88)}
+    .icon-img{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,0.18);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);display:flex;align-items:center;justify-content:center;font-size:24px;border:1px solid rgba(255,255,255,0.2);box-shadow:0 8px 20px rgba(0,0,0,0.3)}
+    .app-icon span{margin-top:8px;font-size:0.75em;color:white;text-shadow:0 2px 6px rgba(0,0,0,0.8);max-width:85px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .delete-btn{position:absolute;top:-8px;right:-8px;width:22px;height:22px;background:#ff3b30;border-radius:50%;color:white;display:none;align-items:center;justify-content:center;font-size:14px;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,0.5)}
+    .dock{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);width:max-content;padding:8px 16px;background:var(--glass-bg);backdrop-filter:blur(25px) saturate(180%);-webkit-backdrop-filter:blur(25px) saturate(180%);border-radius:28px;border:1px solid var(--glass-border);box-shadow:0 10px 30px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.2);display:flex;justify-content:center;align-items:center;gap:12px;z-index:20}
+    .dock-item{width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.2)}
+    .dock-item:active{transform:scale(0.9);background:rgba(255,255,255,0.25)}
+    #fullscreenContainer{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:rgba(0,0,0,0.4);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);display:flex;flex-direction:column;overflow:hidden;border-radius:0}
+    #fullscreenContent{flex:1;width:100%;height:100%;overflow:hidden}
+    #fullscreenContent iframe{width:100%;height:100%;border:none;background:#000}
+    .nav-trigger{position:absolute;bottom:0;left:0;right:0;height:22px;z-index:50;background:rgba(255,255,255,0.02)}
+    .nav-bar{position:absolute;bottom:0;left:0;right:0;height:60px;background:rgba(0,0,0,0.6);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;gap:16px;transform:translateY(100%);transition:transform 0.3s;z-index:51}
+    .nav-bar.visible{transform:translateY(0)}
+    .nav-exit-btn{background:rgba(255,255,255,0.2);border:none;color:white;padding:10px 30px;border-radius:30px;font-size:1rem;font-weight:600;cursor:pointer}
+    .notification-panel{position:fixed;top:0;left:0;right:0;background:var(--notification-bg);backdrop-filter:blur(30px);padding:50px 20px 20px;z-index:400;transform:translateY(-100%);transition:transform 0.35s;border-radius:0 0 24px 24px}
+    .notification-panel.open{transform:translateY(0)}
+    #settingsPanel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88%;max-width:380px;background:var(--settings-bg);backdrop-filter:blur(36px);border-radius:26px;border:1px solid rgba(255,255,255,0.3);padding:24px;z-index:300;color:white;display:flex;flex-direction:column;gap:18px}
+    .hidden{display:none!important}
+    .glass-btn{background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);color:white;padding:10px 18px;border-radius:40px;cursor:pointer;backdrop-filter:blur(12px);font-size:0.9em;font-weight:500;text-align:center}
+    #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);color:white;padding:12px 24px;border-radius:30px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="splashScreen"><canvas id="splashCanvas"></canvas><div class="splash-text" id="splashText" style="opacity:0;"><div class="title">Apos</div><div class="welcome">你好，欢迎回家</div></div></div>
+  <div class="particle-wallpaper" id="particleWallpaper"><canvas id="particleCanvas"></canvas></div>
+  <div id="lockScreen" class="hidden"><div class="lock-blur"></div><div class="lock-content"><div class="lock-time" id="lockTime">12:00</div><div class="lock-date" id="lockDate">2026年6月18日 周四</div></div></div>
+  <div id="desktop" class="hidden">
+    <div class="desktop-scroll" id="desktopScroll"><div class="desktop-page" id="desktopPage1"></div><div class="desktop-page" id="desktopPage2"></div></div>
+    <div class="dock" id="dockBar"><div class="dock-item" data-app="settings">⚙️</div><div class="dock-item" data-app="store">🛒</div><div class="dock-item" data-app="browser">🌐</div><div class="dock-item" data-app="feixin">💬</div></div>
+  </div>
+  <div class="notification-panel" id="notificationPanel">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;"><button class="glass-btn" id="toggleParticles">✨ 粒子</button><button class="glass-btn" id="toggleDarkMode">🌓 深色</button><button class="glass-btn" id="forceExitBtn" style="background:rgba(255,80,80,0.4);">🚪 强制退出</button></div>
+  </div>
+  <div id="fullscreenContainer" class="hidden"><div id="fullscreenContent"></div><div class="nav-trigger" id="navTrigger"></div><div class="nav-bar" id="navBar"><button class="nav-exit-btn" id="navExitBtn">退出</button></div></div>
+  <div id="settingsPanel" class="hidden">
+    <div style="font-size:1.3em;font-weight:600;text-align:center;">⚙️ 设置</div>
+    <div><label style="opacity:0.8;">壁纸</label><button class="glass-btn" id="changeWallpaperBtn">选择图片</button></div>
+    <div><label style="opacity:0.8;">模糊度: <span id="blurValue">28</span>px</label><input type="range" id="blurSlider" min="5" max="40" value="28" style="width:100%;"></div>
+    <button class="glass-btn" id="closeSettingsBtn">关闭</button>
+    <input type="file" id="wallpaperInput" accept="image/*" hidden>
+  </div>
+  <div id="overlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:150;"></div>
+  <input type="file" id="appFileInput" accept=".html,.htm" hidden>
+  <div id="toast">软件已安装成功</div>
+  <div id="customInstallModal" class="hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,40,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:20px;color:white;z-index:400;display:flex;flex-direction:column;gap:12px;width:90%;max-width:320px;">
+    <h3>自定义安装</h3>
+    <input type="text" id="customAppName" placeholder="应用名称" value="未命名">
+    <div id="emojiGrid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    <div style="display:flex;gap:8px;"><button class="glass-btn" id="confirmCustomInstall">确认安装</button><button class="glass-btn" id="cancelCustomInstall">取消</button></div>
+  </div>
+</div>
+<script>
+(function() {
+  // ========== 光纤粒子启动动画 ==========
+  var splashCanvas = document.getElementById('splashCanvas');
+  var splashCtx = splashCanvas.getContext('2d');
+  var splashScreen = document.getElementById('splashScreen');
+  var splashText = document.getElementById('splashText');
+  splashCanvas.width = window.innerWidth;
+  splashCanvas.height = window.innerHeight;
+  var particles = [];
+  var MAX_PARTICLES = 150;
+  function FiberParticle(x, y) {
+    this.x = x; this.y = y;
+    var angle = Math.random() * Math.PI * 2;
+    var speed = 3 + Math.random() * 8;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.radius = 1.5 + Math.random() * 2.5;
+    this.color = 'hsl(' + (Math.random() * 60 + 200) + ',100%,' + (Math.random() * 50 + 50) + '%)';
+    this.alpha = 1;
+    this.decay = 0.002 + Math.random() * 0.008;
+    this.trail = [];
+    this.trailLength = 8 + Math.floor(Math.random() * 12);
+  }
+  FiberParticle.prototype.update = function() {
+    this.x += this.vx; this.y += this.vy;
+    this.alpha -= this.decay;
+    this.trail.push({x: this.x, y: this.y, alpha: this.alpha});
+    if (this.trail.length > this.trailLength) this.trail.shift();
+    if (this.x < 0 || this.x > splashCanvas.width) this.vx *= -0.8;
+    if (this.y < 0 || this.y > splashCanvas.height) this.vy *= -0.8;
+  };
+  FiberParticle.prototype.draw = function(ctx) {
+    for (var i = 0; i < this.trail.length; i++) {
+      var t = this.trail[i];
+      var ratio = i / this.trail.length;
+      ctx.globalAlpha = this.alpha * ratio * 0.6;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, this.radius * ratio, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+    ctx.globalAlpha = this.alpha;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+  };
+  function explodeFiber() {
+    var cx = splashCanvas.width / 2, cy = splashCanvas.height / 2;
+    for (var i = 0; i < MAX_PARTICLES; i++) particles.push(new FiberParticle(cx, cy));
+  }
+  var explosionCount = 0;
+  function startExplosions() {
+    if (explosionCount >= 3) {
+      splashText.style.opacity = '1';
+      setTimeout(function() {
+        splashScreen.classList.add('exit-animation');
+        splashScreen.addEventListener('transitionend', function handler() {
+          splashScreen.removeEventListener('transitionend', handler);
+          splashScreen.classList.add('hidden');
+          document.getElementById('lockScreen').classList.remove('hidden');
+        });
+      }, 3000);
+      return;
+    }
+    explodeFiber();
+    explosionCount++;
+    setTimeout(startExplosions, 500);
+  }
+  function animateSplash() {
+    splashCtx.clearRect(0, 0, splashCanvas.width, splashCanvas.height);
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      p.update();
+      if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+      p.draw(splashCtx);
+    }
+    if (particles.length > 0 || explosionCount < 3) requestAnimationFrame(animateSplash);
+  }
+  startExplosions();
+  animateSplash();
+
+  // ========== 粒子背景 ==========
+  var bgCanvas = document.getElementById('particleCanvas');
+  var bgCtx = bgCanvas.getContext('2d');
+  var bgParticles = []; var particleEnabled = true;
+  function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+  resizeBg(); window.addEventListener('resize', resizeBg);
+  function BgParticle() { this.reset(true); }
+  BgParticle.prototype.reset = function(initial) {
+    if (initial) {
+      this.x = Math.random() * bgCanvas.width; this.y = Math.random() * bgCanvas.height;
+      this.speedX = (Math.random() - 0.5) * 0.5; this.speedY = (Math.random() - 0.5) * 0.5;
+    } else {
+      var side = Math.floor(Math.random() * 4);
+      if (side === 0) { this.x = -10; this.y = Math.random() * bgCanvas.height; this.speedX = Math.abs((Math.random() - 0.5) * 0.5) + 0.1; this.speedY = (Math.random() - 0.5) * 0.5; }
+      else if (side === 1) { this.x = bgCanvas.width + 10; this.y = Math.random() * bgCanvas.height; this.speedX = -(Math.abs((Math.random() - 0.5) * 0.5) + 0.1); this.speedY = (Math.random() - 0.5) * 0.5; }
+      else if (side === 2) { this.x = Math.random() * bgCanvas.width; this.y = -10; this.speedX = (Math.random() - 0.5) * 0.5; this.speedY = Math.abs((Math.random() - 0.5) * 0.5) + 0.1; }
+      else { this.x = Math.random() * bgCanvas.width; this.y = bgCanvas.height + 10; this.speedX = (Math.random() - 0.5) * 0.5; this.speedY = -(Math.abs((Math.random() - 0.5) * 0.5) + 0.1); }
+    }
+    this.size = Math.random() * 2 + 1; this.opacity = Math.random() * 0.5 + 0.2;
+  };
+  BgParticle.prototype.update = function() { this.x += this.speedX; this.y += this.speedY; if (this.x < -15 || this.x > bgCanvas.width + 15 || this.y < -15 || this.y > bgCanvas.height + 15) this.reset(false); };
+  BgParticle.prototype.draw = function() { bgCtx.beginPath(); bgCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2); bgCtx.fillStyle = 'rgba(255,255,255,' + this.opacity + ')'; bgCtx.fill(); };
+  for (var i = 0; i < 100; i++) bgParticles.push(new BgParticle());
+  function animateBg() { if (!particleEnabled) { requestAnimationFrame(animateBg); return; } bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height); for (var i = 0; i < bgParticles.length; i++) { bgParticles[i].update(); bgParticles[i].draw(); } requestAnimationFrame(animateBg); }
+  animateBg();
+
+  // ========== 系统核心元素 ==========
+  var lockScreen = document.getElementById('lockScreen'), desktop = document.getElementById('desktop'), lockTimeEl = document.getElementById('lockTime'), lockDateEl = document.getElementById('lockDate'), fullscreenContainer = document.getElementById('fullscreenContainer'), fullscreenContent = document.getElementById('fullscreenContent'), desktopPage1 = document.getElementById('desktopPage1'), desktopPage2 = document.getElementById('desktopPage2'), toast = document.getElementById('toast'), notificationPanel = document.getElementById('notificationPanel'), navBar = document.getElementById('navBar'), particleWallpaper = document.getElementById('particleWallpaper');
+  var isLocked = true, installedApps = new Map(), pendingInstallContent = null, selectedEmoji = '📄', fullscreenOpen = false, fscTimeout = null;
+  function showToast(msg) { toast.textContent = msg; toast.style.opacity = '1'; clearTimeout(toast._t); toast._t = setTimeout(function() { toast.style.opacity = '0'; }, 1500); }
+  function updateClock() { var n = new Date(); lockTimeEl.textContent = n.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }); lockDateEl.textContent = n.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }); }
+  updateClock(); setInterval(updateClock, 1000);
+
+  // 锁屏（鼠标拖动模拟上滑）
+  var lockStartY = 0, lockDragging = false;
+  lockScreen.addEventListener('mousedown', function(e) { if (!isLocked) return; lockStartY = e.clientY; lockDragging = true; });
+  window.addEventListener('mouseup', function(e) { if (lockDragging && isLocked && lockStartY - e.clientY > 55) { unlock(); } lockDragging = false; });
+  function unlock() { isLocked = false; lockScreen.style.transform = 'translateY(-100%)'; lockScreen.style.pointerEvents = 'none'; desktop.classList.remove('hidden'); setTimeout(function() { lockScreen.classList.add('hidden'); }, 500); }
+
+  // 通知面板（鼠标滚轮或点击打开）
+  document.addEventListener('wheel', function(e) {
+    if (isLocked || !fullscreenContainer.classList.contains('hidden')) return;
+    if (e.deltaY < -20) notificationPanel.classList.add('open');
+    else if (e.deltaY > 20) notificationPanel.classList.remove('open');
+  });
+
+  // 底部导航栏（鼠标移动到底部附近显示）
+  document.addEventListener('mousemove', function(e) {
+    if (isLocked || fullscreenContainer.classList.contains('hidden')) return;
+    if (window.innerHeight - e.clientY < 40) navBar.classList.add('visible');
+    else navBar.classList.remove('visible');
+  });
+  document.getElementById('navExitBtn').addEventListener('click', closeFullscreen);
+  document.getElementById('forceExitBtn').addEventListener('click', function() { forceCloseFullscreen(); showToast('已强制退出'); });
+
+  function openFullscreenApp(type, data) {
+    if (fullscreenOpen) forceCloseFullscreen();
+    fullscreenOpen = true;
+    fullscreenContainer.classList.remove('hidden');
+    desktop.classList.add('hidden');
+    fullscreenContent.innerHTML = '';
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals');
+    iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
+    var htmlContent = '';
+    if (type === 'html') htmlContent = data.html;
+    else if (type === 'browser') htmlContent = BROWSER_HTML;
+    else if (type === 'store') htmlContent = STORE_HTML;
+    else if (type === 'feixin') { iframe.src = 'feixin.html'; iframe.removeAttribute('sandbox'); }
+    else if (type === 'calc') htmlContent = CALC_HTML;
+    else if (type === 'clock') htmlContent = CLOCK_HTML;
+    if (type !== 'feixin') iframe.srcdoc = htmlContent;
+    fullscreenContent.appendChild(iframe);
+  }
+  function closeFullscreen() {
+    if (!fullscreenOpen) return;
+    fullscreenOpen = false;
+    fullscreenContainer.classList.add('hidden');
+    fullscreenContent.innerHTML = '';
+    desktop.classList.remove('hidden');
+    navBar.classList.remove('visible');
+  }
+  function forceCloseFullscreen() { closeFullscreen(); }
+
+  // ========== 桌面图标（电脑端：单击打开，右键删除，鼠标拖拽排序） ==========
+  function createDesktopIcon(app, forceContainer) {
+    var existing = document.querySelector('.app-icon[data-appid="' + app.id + '"]');
+    if (existing) existing.remove();
+    var container = forceContainer || (desktopPage1.querySelectorAll('.app-icon').length >= 12 ? desktopPage2 : desktopPage1);
+    var div = document.createElement('div'); div.className = 'app-icon'; div.dataset.appid = app.id;
+    div.innerHTML = '<div class="icon-img">' + (app.icon || '📄') + '</div><span>' + app.name + '</span><div class="delete-btn">✕</div>';
+    var delBtn = div.querySelector('.delete-btn');
+
+    // 单击打开应用
+    div.addEventListener('click', function(e) { e.stopPropagation(); launchApp(app); });
+    // 右键显示删除按钮
+    div.addEventListener('contextmenu', function(e) { e.preventDefault(); delBtn.style.display = 'flex'; });
+    // 点击其他位置隐藏删除按钮
+    document.addEventListener('click', function(e) { if (e.target !== delBtn && !delBtn.contains(e.target)) delBtn.style.display = 'none'; });
+    delBtn.addEventListener('click', function(e) { e.stopPropagation(); e.preventDefault(); if (confirm('确定删除"' + app.name + '"吗？')) { installedApps.delete(app.id); div.remove(); saveInstalledApps(); showToast('已删除'); } });
+
+    // 拖拽排序（鼠标）
+    var isDragging = false, startX, startY, offsetX, offsetY, dragClone;
+    div.addEventListener('mousedown', function(e) {
+      if (e.button === 2) return; // 右键不触发
+      e.preventDefault();
+      startX = e.clientX; startY = e.clientY;
+      isDragging = false;
+      var rect = div.getBoundingClientRect();
+      offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
+      function onMouseMove(e) {
+        if (!isDragging) {
+          if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+            isDragging = true;
+            dragClone = div.cloneNode(true);
+            dragClone.style.position = 'fixed'; dragClone.style.left = (e.clientX - offsetX) + 'px'; dragClone.style.top = (e.clientY - offsetY) + 'px';
+            dragClone.style.zIndex = '500'; dragClone.style.pointerEvents = 'none'; dragClone.style.opacity = '0.8';
+            dragClone.querySelector('.delete-btn').style.display = 'none';
+            document.body.appendChild(dragClone);
+            div.style.opacity = '0.4';
+          }
+        } else {
+          dragClone.style.left = (e.clientX - offsetX) + 'px';
+          dragClone.style.top = (e.clientY - offsetY) + 'px';
+          var target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.app-icon');
+          if (target && target !== div) {
+            var children = [...container.children];
+            var targetIndex = children.indexOf(target), currentIndex = children.indexOf(div);
+            if (targetIndex > -1 && currentIndex > -1) {
+              if (targetIndex > currentIndex) container.insertBefore(div, target.nextSibling);
+              else container.insertBefore(div, target);
+            }
+          }
+        }
+      }
+      function onMouseUp() {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        if (dragClone) { dragClone.remove(); dragClone = null; }
+        if (isDragging) { div.style.opacity = '1'; isDragging = false; }
+      }
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+
+    container.appendChild(div);
+    saveInstalledApps();
+  }
+
+  function launchApp(app) { if (app.type === 'browser') openFullscreenApp('browser'); else if (app.type === 'store') openFullscreenApp('store'); else if (app.type === 'feixin') openFullscreenApp('feixin'); else if (app.type === 'calc') openFullscreenApp('calc'); else if (app.type === 'clock') openFullscreenApp('clock'); else if (app.htmlContent) openFullscreenApp('html', {html: app.htmlContent}); }
+
+  // 持久化
+  var STORAGE_KEY = 'apos_installed_apps';
+  function saveInstalledApps() {
+    var appsArray = [];
+    installedApps.forEach(function(a) { appsArray.push({ id: a.id, name: a.name, type: a.type, icon: a.icon, htmlContent: a.htmlContent || '', contentHash: a.contentHash || '', installTime: a.installTime || Date.now() }); });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appsArray)); } catch(e) {}
+  }
+  function loadInstalledApps() {
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        var arr = JSON.parse(saved);
+        installedApps.clear();
+        desktopPage1.innerHTML = ''; desktopPage2.innerHTML = '';
+        arr.forEach(function(obj) { var app = { id: obj.id, name: obj.name, type: obj.type, icon: obj.icon, htmlContent: obj.htmlContent, contentHash: obj.contentHash, installTime: obj.installTime || Date.now() }; installedApps.set(app.id, app); });
+        var sorted = Array.from(installedApps.values()).sort(function(a,b){ return (a.installTime||0)-(b.installTime||0); });
+        installedApps.clear(); sorted.forEach(function(a){ installedApps.set(a.id,a); });
+        installedApps.forEach(function(a){ createDesktopIcon(a, null); });
+      } catch(e) {}
+    }
+  }
+  function simpleHash(str) { var hash=0; for(var i=0;i<str.length;i++){ var c=str.charCodeAt(i); hash=((hash<<5)-hash)+c; hash|=0; } return hash.toString(); }
+
+  // Dock点击
+  document.getElementById('dockBar').addEventListener('click', function(e) {
+    var item = e.target.closest('.dock-item');
+    if (!item) return;
+    var appId = item.dataset.app;
+    if (appId === 'settings') { document.getElementById('settingsPanel').classList.remove('hidden'); document.getElementById('overlay').classList.remove('hidden'); }
+    else if (appId === 'store') openFullscreenApp('store');
+    else if (appId === 'browser') openFullscreenApp('browser');
+    else if (appId === 'feixin') openFullscreenApp('feixin');
+  });
+
+  // 通知面板按钮
+  document.getElementById('toggleParticles').addEventListener('click', function() { particleEnabled = !particleEnabled; showToast(particleEnabled ? '粒子已开启' : '粒子已关闭'); });
+  document.getElementById('toggleDarkMode').addEventListener('click', function() { document.body.classList.toggle('dark-mode'); var isDark = document.body.classList.contains('dark-mode'); showToast(isDark ? '深色模式' : '浅色模式'); localStorage.setItem('apos_dark_mode', isDark ? '1' : '0'); });
+  if (localStorage.getItem('apos_dark_mode') === '1') document.body.classList.add('dark-mode');
+
+  // 设置面板
+  function closeSettings() { document.getElementById('settingsPanel').classList.add('hidden'); document.getElementById('overlay').classList.add('hidden'); }
+  document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
+  document.getElementById('overlay').addEventListener('click', closeSettings);
+  document.getElementById('changeWallpaperBtn').addEventListener('click', function() { document.getElementById('wallpaperInput').click(); });
+  document.getElementById('wallpaperInput').addEventListener('change', function(e) { var f = e.target.files[0]; if (!f) return; var r = new FileReader(); r.onload = function(ev) { particleWallpaper.style.backgroundImage = 'url(' + ev.target.result + ')'; particleWallpaper.style.backgroundSize = 'cover'; particleWallpaper.style.backgroundPosition = 'center'; localStorage.setItem('apos_wallpaper', ev.target.result); showToast('壁纸已更换'); }; r.readAsDataURL(f); e.target.value = ''; });
+  var blurSlider = document.getElementById('blurSlider'), blurValueEl = document.getElementById('blurValue');
+  blurSlider.addEventListener('input', function() { var v = blurSlider.value; blurValueEl.textContent = v; document.querySelector('.lock-blur').style.backdropFilter = 'blur(' + v + 'px) saturate(180%)'; localStorage.setItem('apos_blur', v); });
+  (function() { var sb = localStorage.getItem('apos_blur'); if (sb) { blurSlider.value = sb; blurValueEl.textContent = sb; document.querySelector('.lock-blur').style.backdropFilter = 'blur(' + sb + 'px) saturate(180%)'; } })();
+  (function() { var sw = localStorage.getItem('apos_wallpaper'); if (sw) { particleWallpaper.style.backgroundImage = 'url(' + sw + ')'; particleWallpaper.style.backgroundSize = 'cover'; particleWallpaper.style.backgroundPosition = 'center'; } })();
+
+  // 自定义安装
+  document.getElementById('appFileInput').addEventListener('change', function(e) {
+    var file = e.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      pendingInstallContent = ev.target.result;
+      var hash = simpleHash(pendingInstallContent);
+      if (Array.from(installedApps.values()).some(function(a) { return a.contentHash === hash; })) { showToast('软件已安装，请勿重新尝试'); pendingInstallContent = null; return; }
+      document.getElementById('customAppName').value = file.name.replace(/\.(html|htm)$/i, '') || '未命名';
+      selectedEmoji = '📄';
+      var grid = document.getElementById('emojiGrid');
+      grid.innerHTML = ['📄','🌐','💬','🔢','📝','🎮','📷','🎵','⚙️','❤️','🔥','📁','🎨','📊','🔧'].map(function(e){ return '<span style="font-size:1.8rem;cursor:pointer;padding:4px;border-radius:8px;" data-emoji="'+e+'">'+e+'</span>'; }).join('');
+      grid.querySelectorAll('span').forEach(function(s){ s.addEventListener('click', function(){ grid.querySelectorAll('span').forEach(function(el){ el.style.background=''; }); s.style.background='rgba(255,255,255,0.3)'; selectedEmoji = s.dataset.emoji; }); });
+      var first = grid.querySelector('span'); if (first) first.style.background = 'rgba(255,255,255,0.3)';
+      document.getElementById('customInstallModal').classList.remove('hidden');
+    };
+    reader.readAsText(file); e.target.value = '';
+  });
+  document.getElementById('confirmCustomInstall').addEventListener('click', function() {
+    if (!pendingInstallContent) return;
+    var name = document.getElementById('customAppName').value.trim() || '未命名';
+    var hash = simpleHash(pendingInstallContent);
+    var app = { id: Date.now().toString(), name: name, type: 'html', icon: selectedEmoji, htmlContent: pendingInstallContent, contentHash: hash, installTime: Date.now() };
+    installedApps.set(app.id, app);
+    createDesktopIcon(app, null);
+    document.getElementById('customInstallModal').classList.add('hidden');
+    pendingInstallContent = null;
+    showToast('安装成功');
+  });
+  document.getElementById('cancelCustomInstall').addEventListener('click', function() { document.getElementById('customInstallModal').classList.add('hidden'); pendingInstallContent = null; });
+
+  window.installStoreApp = function(id) {
+    if (id === 'notepad') {
+      if (Array.from(installedApps.values()).some(function(a){ return a.type === 'notepad'; })) { showToast('已安装'); return; }
+      var app = { id: 'notepad', name: '记事本', type: 'notepad', icon: '📝', htmlContent: NOTEPAD_HTML, contentHash: simpleHash(NOTEPAD_HTML), installTime: Date.now() };
+      installedApps.set(app.id, app);
+      createDesktopIcon(app, null);
+      showToast('已安装');
+    }
+  };
+
+  // ========== 应用 HTML 完整定义（无省略） ==========
+  var CALC_HTML = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"><title>全屏果冻计算器</title><style>:root{--bg-deep:#0a0a1a;--card-bg:rgba(14,14,35,0.95);--display-bg:rgba(8,8,22,0.85);--btn-number:rgba(45,45,85,0.75);--btn-number-hover:rgba(60,60,105,0.85);--btn-func:rgba(35,35,65,0.75);--btn-func-hover:rgba(50,50,85,0.85);--btn-operator:#ff6b4a;--btn-operator-hover:#ff8a6a;--btn-operator-active:#ff3b1f;--btn-equals:#ff3366;--btn-equals-hover:#ff5c8a;--text-primary:#ffffff;--text-secondary:#b0b0d0;--text-display:#ffffff;--glass-border:rgba(255,255,255,0.08);--shadow-btn:0 6px 18px rgba(0,0,0,0.5),0 2px 4px rgba(0,0,0,0.3);--shadow-btn-pressed:0 2px 6px rgba(0,0,0,0.5);--radius-btn:24px;--radius-display:24px;}*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;overflow:hidden;font-family:\'SF Pro Display\',\'Segoe UI\',\'PingFang SC\',\'Helvetica Neue\',sans-serif;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;background:#0a0a1a;}.calculator{position:relative;z-index:1;width:100%;height:100%;background:var(--card-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:0;box-shadow:none;border:none;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;gap:18px;transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);overflow:hidden;}.calculator::before{content:\'\';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(255,90,120,0.12) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(80,120,255,0.1) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(255,180,70,0.08) 0%,transparent 60%);pointer-events:none;z-index:0;border-radius:0;}.calculator.card-bounce{animation:cardJellyBounce 0.6s cubic-bezier(0.34,1.56,0.64,1);}@keyframes cardJellyBounce{0%{transform:scale(1);}25%{transform:scale(0.98);}50%{transform:scale(1.015);}70%{transform:scale(0.99);}100%{transform:scale(1);}}.display{position:relative;z-index:2;background:var(--display-bg);border-radius:var(--radius-display);padding:24px 24px 18px;text-align:right;min-height:120px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;box-shadow:inset 0 4px 15px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}.display .expression{font-size:0.95rem;color:var(--text-secondary);letter-spacing:0.5px;min-height:22px;word-break:break-all;line-height:1.4;}.display .result{font-size:3.2rem;font-weight:600;color:var(--text-display);letter-spacing:-1px;font-variant-numeric:tabular-nums;font-family:\'SF Mono\',\'JetBrains Mono\',\'Consolas\',\'Menlo\',\'PingFang SC\',monospace;line-height:1.1;word-break:break-all;text-shadow:0 0 20px rgba(255,255,255,0.3);transition:color 0.3s;}.display .result.bounce-in{animation:displayBounceIn 0.45s cubic-bezier(0.34,1.56,0.64,1);}@keyframes displayBounceIn{0%{transform:scale(1.3);opacity:0.3;filter:blur(6px);}40%{transform:scale(0.88);opacity:1;filter:blur(0);}65%{transform:scale(1.07);}85%{transform:scale(0.96);}100%{transform:scale(1);opacity:1;filter:blur(0);}}.display .result.big-bounce{animation:displayBigBounce 0.55s cubic-bezier(0.34,1.56,0.64,1);}@keyframes displayBigBounce{0%{transform:scale(1.4);opacity:0;filter:blur(10px);}30%{transform:scale(0.8);opacity:1;filter:blur(0);}55%{transform:scale(1.12);}75%{transform:scale(0.93);}90%{transform:scale(1.04);}100%{transform:scale(1);opacity:1;}}.display.glow-pulse{animation:displayGlow 0.7s ease-out;}@keyframes displayGlow{0%{box-shadow:inset 0 4px 15px rgba(0,0,0,0.5),0 0 40px rgba(255,90,120,0.6);}100%{box-shadow:inset 0 4px 15px rgba(0,0,0,0.5),0 0 0px rgba(255,90,120,0);}}.buttons-grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:1;align-content:center;}.btn{position:relative;border:none;border-radius:var(--radius-btn);font-size:1.5rem;font-weight:500;cursor:pointer;outline:none;padding:0;aspect-ratio:1/1;color:var(--text-primary);background:var(--btn-number);transition:transform 0.15s cubic-bezier(0.4,0,0.2,1),box-shadow 0.15s,background 0.3s;box-shadow:var(--shadow-btn);overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;letter-spacing:0.3px;z-index:1;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:1.6rem;}.btn[data-value="0"]{aspect-ratio:auto;grid-column:span 2;}.btn:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,0.5),0 3px 8px rgba(0,0,0,0.3);}.btn:active{transform:scale(0.9);box-shadow:var(--shadow-btn-pressed);transition:transform 0.08s cubic-bezier(0.4,0,0.6,1),box-shadow 0.08s;}.btn-number{background:var(--btn-number);}.btn-number:hover{background:var(--btn-number-hover);}.btn-func{background:var(--btn-func);font-weight:600;font-size:1.2rem;}.btn-func:hover{background:var(--btn-func-hover);}.btn-operator{background:var(--btn-operator);font-weight:700;font-size:1.8rem;color:#fff;border:1px solid rgba(255,255,255,0.15);}.btn-operator:hover{background:var(--btn-operator-hover);}.btn-operator.active-operator{background:var(--btn-operator-active);box-shadow:0 0 25px rgba(255,60,30,0.7),0 6px 18px rgba(0,0,0,0.4);animation:operatorGlow 1.8s ease-in-out infinite;}@keyframes operatorGlow{0%,100%{box-shadow:0 0 20px rgba(255,70,40,0.5),0 6px 18px rgba(0,0,0,0.4);}50%{box-shadow:0 0 35px rgba(255,100,70,0.8),0 6px 18px rgba(0,0,0,0.4);}}.btn-equals{background:var(--btn-equals);font-weight:700;font-size:2rem;color:#fff;box-shadow:0 8px 28px rgba(255,51,102,0.5),0 3px 8px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);}.btn-equals:hover{background:var(--btn-equals-hover);box-shadow:0 14px 36px rgba(255,51,102,0.65),0 4px 12px rgba(0,0,0,0.5);transform:translateY(-4px);}.btn-equals:active{transform:scale(0.88);box-shadow:0 3px 12px rgba(255,51,102,0.6);}.btn.jelly-pop{animation:jellyPop 0.38s cubic-bezier(0.34,1.56,0.64,1);}@keyframes jellyPop{0%{transform:scale(1);border-radius:var(--radius-btn);}22%{transform:scale(0.8);border-radius:32px;}48%{transform:scale(1.1);border-radius:18px;}70%{transform:scale(0.94);border-radius:24px;}88%{transform:scale(1.03);border-radius:20px;}100%{transform:scale(1);border-radius:var(--radius-btn);}}.btn.jelly-pop-big{animation:jellyPopBig 0.5s cubic-bezier(0.34,1.56,0.64,1);}@keyframes jellyPopBig{0%{transform:scale(1);border-radius:var(--radius-btn);}18%{transform:scale(0.72);border-radius:36px;}42%{transform:scale(1.16);border-radius:16px;}62%{transform:scale(0.88);border-radius:26px;}80%{transform:scale(1.05);border-radius:18px;}92%{transform:scale(0.96);border-radius:22px;}100%{transform:scale(1);border-radius:var(--radius-btn);}}.btn.jelly-pop-small{animation:jellyPopSmall 0.3s cubic-bezier(0.34,1.56,0.64,1);}@keyframes jellyPopSmall{0%{transform:scale(1);}30%{transform:scale(0.86);}55%{transform:scale(1.06);}78%{transform:scale(0.96);}100%{transform:scale(1);}}.btn.shake{animation:btnShake 0.5s ease-in-out;}@keyframes btnShake{0%,100%{transform:translateX(0);}15%{transform:translateX(-7px);}30%{transform:translateX(7px);}45%{transform:translateX(-6px);}60%{transform:translateX(5px);}75%{transform:translateX(-3px);}90%{transform:translateX(2px);}}.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.35);transform:scale(0);pointer-events:none;animation:rippleEffect 0.6s ease-out forwards;z-index:0;}@keyframes rippleEffect{to{transform:scale(5);opacity:0;}}.btn-operator .ripple,.btn-equals .ripple{background:rgba(255,255,255,0.5);}.particle{position:absolute;border-radius:50%;pointer-events:none;z-index:2;animation:particleBurst 0.75s ease-out forwards;}@keyframes particleBurst{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--px),var(--py)) scale(0);opacity:0;}}@media(max-width:400px){.btn{font-size:1.3rem;}.btn-operator{font-size:1.5rem;}.btn-equals{font-size:1.7rem;}.display .result{font-size:2.6rem;}}</style></head><body><div class="calculator" id="calculator"><div class="display" id="display"><div class="expression" id="expression"></div><div class="result" id="result">0</div></div><div class="buttons-grid"><button class="btn btn-func" data-action="clear">AC</button><button class="btn btn-func" data-action="toggle-sign">+/−</button><button class="btn btn-func" data-action="percent">%</button><button class="btn btn-operator" data-action="operator" data-value="÷">÷</button><button class="btn btn-number" data-action="number" data-value="7">7</button><button class="btn btn-number" data-action="number" data-value="8">8</button><button class="btn btn-number" data-action="number" data-value="9">9</button><button class="btn btn-operator" data-action="operator" data-value="×">×</button><button class="btn btn-number" data-action="number" data-value="4">4</button><button class="btn btn-number" data-action="number" data-value="5">5</button><button class="btn btn-number" data-action="number" data-value="6">6</button><button class="btn btn-operator" data-action="operator" data-value="−">−</button><button class="btn btn-number" data-action="number" data-value="1">1</button><button class="btn btn-number" data-action="number" data-value="2">2</button><button class="btn btn-number" data-action="number" data-value="3">3</button><button class="btn btn-operator" data-action="operator" data-value="+">+</button><button class="btn btn-number" data-action="number" data-value="0">0</button><button class="btn btn-number" data-action="decimal" data-value=".">.</button><button class="btn btn-equals" data-action="equals">=</button></div></div><script>(function(){const calculator=document.getElementById(\'calculator\');const display=document.getElementById(\'display\');const expressionEl=document.getElementById(\'expression\');const resultEl=document.getElementById(\'result\');let currentInput=\'0\';let previousInput=\'\';let operator=null;let shouldResetDisplay=false;let lastResult=null;let expressionText=\'\';let justEvaluated=false;updateDisplay(\'0\',\'\');function updateDisplay(value,expr){let displayValue=value;if(value.length>12&&!value.includes(\'e\')){const num=parseFloat(value);if(!isNaN(num)){if(Math.abs(num)>=1e12||(Math.abs(num)<0.0001&&num!==0)){displayValue=num.toExponential(6);}else if(value.includes(\'.\')){const parts=value.split(\'.\');if(parts[0].length>10)displayValue=num.toExponential(6);else displayValue=value.slice(0,12);}else if(value.length>12){displayValue=num.toExponential(6);}}}resultEl.textContent=displayValue;expressionEl.textContent=expr;}document.querySelector(\'.buttons-grid\').addEventListener(\'click\',function(e){const btn=e.target.closest(\'.btn\');if(!btn)return;const action=btn.dataset.action;const value=btn.dataset.value;triggerJellyAnimation(btn,action);createRipple(e,btn);handleAction(action,value,btn);animateDisplay(action);});document.addEventListener(\'keydown\',function(e){const key=e.key;let action=null,value=null,targetBtn=null;if(key>=\'0\'&&key<=\'9\'){action=\'number\';value=key;targetBtn=document.querySelector(\'.btn-number[data-value="\'+key+\'"]\');}else if(key===\'.\'){action=\'decimal\';targetBtn=document.querySelector(\'.btn-number[data-value="."]\');}else if(key===\'+\'){action=\'operator\';value=\'+\';targetBtn=document.querySelector(\'.btn-operator[data-value="+"]\');}else if(key===\'-\'){action=\'operator\';value=\'−\';targetBtn=document.querySelector(\'.btn-operator[data-value="−"]\');}else if(key===\'*\'){action=\'operator\';value=\'×\';targetBtn=document.querySelector(\'.btn-operator[data-value="×"]\');}else if(key===\'/\'){action=\'operator\';value=\'÷\';targetBtn=document.querySelector(\'.btn-operator[data-value="÷"]\');}else if(key===\'Enter\'||key===\'=\'){action=\'equals\';targetBtn=document.querySelector(\'.btn-equals\');}else if(key===\'Escape\'||key===\'c\'||key===\'C\'){action=\'clear\';targetBtn=document.querySelector(\'.btn-func[data-action="clear"]\');}else if(key===\'Backspace\'){action=\'backspace\';targetBtn=document.querySelector(\'.btn-func[data-action="clear"]\');}else if(key===\'%\'){action=\'percent\';targetBtn=document.querySelector(\'.btn-func[data-action="percent"]\');}if(action&&targetBtn){e.preventDefault();triggerJellyAnimation(targetBtn,action);createRippleAtCenter(targetBtn);handleAction(action,value,targetBtn);animateDisplay(action);}});function handleAction(action,value,btn){switch(action){case\'number\':handleNumber(value);break;case\'decimal\':handleDecimal();break;case\'operator\':handleOperator(value,btn);break;case\'equals\':handleEquals();break;case\'clear\':handleClear();break;case\'toggle-sign\':handleToggleSign();break;case\'percent\':handlePercent();break;case\'backspace\':handleBackspace();break;}updateDisplay(currentInput,expressionText);}function handleNumber(value){if(justEvaluated){currentInput=value;previousInput=\'\';operator=null;expressionText=\'\';justEvaluated=false;shouldResetDisplay=false;}else if(shouldResetDisplay||currentInput===\'0\'){currentInput=(shouldResetDisplay||currentInput===\'0\')?value:currentInput+value;shouldResetDisplay=false;}else{if(currentInput.length<14)currentInput+=value;}clearOperatorHighlight();justEvaluated=false;}function handleDecimal(){if(justEvaluated){currentInput=\'0.\';previousInput=\'\';operator=null;expressionText=\'\';justEvaluated=false;shouldResetDisplay=false;}else if(shouldResetDisplay){currentInput=\'0.\';shouldResetDisplay=false;}else if(!currentInput.includes(\'.\')){currentInput+=\'.\';}clearOperatorHighlight();justEvaluated=false;}function handleOperator(value,btn){const cur=parseFloat(currentInput);if(operator&&!shouldResetDisplay&&!justEvaluated){const prev=parseFloat(previousInput);const res=calculate(prev,cur,operator);currentInput=formatResult(res);previousInput=currentInput;expressionText=currentInput+\' \'+value;}else if(justEvaluated&&lastResult!==null){previousInput=formatResult(lastResult);currentInput=previousInput;expressionText=previousInput+\' \'+value;justEvaluated=false;}else{previousInput=currentInput;expressionText=currentInput+\' \'+value;}operator=value;shouldResetDisplay=true;justEvaluated=false;highlightOperator(btn);}function handleEquals(){if(operator&&!justEvaluated){const cur=parseFloat(currentInput);const prev=parseFloat(previousInput);const res=calculate(prev,cur,operator);expressionText=previousInput+\' \'+operator+\' \'+currentInput+\' =\';if(res===null||isNaN(res)){currentInput=\'Error\';triggerDisplayShake();}else{currentInput=formatResult(res);lastResult=res;}previousInput=\'\';operator=null;shouldResetDisplay=true;justEvaluated=true;clearOperatorHighlight();triggerCardBounce();if(res!==null&&!isNaN(res))triggerDisplayGlow();}else if(justEvaluated&&lastResult!==null){triggerCardBounce();triggerDisplayGlow();}}function handleClear(){currentInput=\'0\';previousInput=\'\';operator=null;expressionText=\'\';shouldResetDisplay=false;justEvaluated=false;lastResult=null;clearOperatorHighlight();}function handleToggleSign(){if(currentInput!==\'0\'&&currentInput!==\'Error\')currentInput=currentInput.startsWith(\'-\')?currentInput.slice(1):\'-\'+currentInput;if(justEvaluated&&lastResult!==null){lastResult=-lastResult;currentInput=formatResult(lastResult);}}function handlePercent(){const num=parseFloat(currentInput);if(!isNaN(num))currentInput=formatResult(num/100);if(justEvaluated&&lastResult!==null){lastResult=lastResult/100;currentInput=formatResult(lastResult);}}function handleBackspace(){if(justEvaluated||shouldResetDisplay)return;currentInput=currentInput.length>1?currentInput.slice(0,-1):\'0\';}function calculate(a,b,op){let res;switch(op){case\'+\':res=a+b;break;case\'−\':res=a-b;break;case\'×\':res=a*b;break;case\'÷\':if(b===0)return null;res=a/b;break;default:return b;}return Math.abs(res)<1e14?parseFloat(res.toPrecision(12)):res;}function formatResult(num){if(num===null||isNaN(num)||!isFinite(num))return\'Error\';if(Math.abs(num)>=1e14||(Math.abs(num)<1e-10&&num!==0))return num.toExponential(8);let str=num.toString();if(str.length>14){const fixed=num.toPrecision(10);return fixed.length<=14?fixed:num.toExponential(6);}return str;}function highlightOperator(btn){clearOperatorHighlight();if(btn&&btn.classList.contains(\'btn-operator\'))btn.classList.add(\'active-operator\');}function clearOperatorHighlight(){document.querySelectorAll(\'.btn-operator.active-operator\').forEach(b=>b.classList.remove(\'active-operator\'));}function triggerJellyAnimation(btn,action){btn.classList.remove(\'jelly-pop\',\'jelly-pop-big\',\'jelly-pop-small\',\'shake\');void btn.offsetWidth;let cls=\'jelly-pop\';if(action===\'equals\'){cls=\'jelly-pop-big\';spawnParticles(btn);}else if([\'clear\',\'toggle-sign\',\'percent\',\'backspace\'].includes(action))cls=\'jelly-pop-small\';else if(action===\'operator\')cls=\'jelly-pop\';btn.classList.add(cls);setTimeout(()=>btn.classList.remove(cls),(cls===\'jelly-pop-big\'?500:(cls===\'jelly-pop-small\'?300:380))+20);}function createRipple(e,btn){const ripple=document.createElement(\'span\');ripple.classList.add(\'ripple\');const rect=btn.getBoundingClientRect();const size=Math.max(rect.width,rect.height);ripple.style.width=ripple.style.height=size+\'px\';ripple.style.left=(e.clientX-rect.left-size/2)+\'px\';ripple.style.top=(e.clientY-rect.top-size/2)+\'px\';btn.appendChild(ripple);ripple.addEventListener(\'animationend\',()=>ripple.remove());}function createRippleAtCenter(btn){const ripple=document.createElement(\'span\');ripple.classList.add(\'ripple\');const rect=btn.getBoundingClientRect();const size=Math.max(rect.width,rect.height);ripple.style.width=ripple.style.height=size+\'px\';ripple.style.left=(rect.width/2-size/2)+\'px\';ripple.style.top=(rect.height/2-size/2)+\'px\';btn.appendChild(ripple);ripple.addEventListener(\'animationend\',()=>ripple.remove());}function spawnParticles(btn){const rect=btn.getBoundingClientRect();const cx=rect.width/2,cy=rect.height/2;const colors=[\'#ff3366\',\'#ff6b4a\',\'#ffb347\',\'#ff5c8a\',\'#ff9a76\',\'#fff\',\'#ffe0e5\'];for(let i=0;i<20;i++){const p=document.createElement(\'span\');p.classList.add(\'particle\');const angle=(Math.PI*2*i)/20+(Math.random()-0.5)*0.5;const dist=35+Math.random()*65;const px=Math.cos(angle)*dist,py=Math.sin(angle)*dist;const size=3+Math.random()*9;p.style.cssText=\'width:\'+size+\'px;height:\'+size+\'px;background:\'+colors[Math.floor(Math.random()*colors.length)]+\';left:\'+(cx-size/2)+\'px;top:\'+(cy-size/2)+\'px;--px:\'+px+\'px;--py:\'+py+\'px;animation-delay:\'+Math.random()*0.1+\'s;\';btn.appendChild(p);p.addEventListener(\'animationend\',()=>p.remove());}}function animateDisplay(action){resultEl.classList.remove(\'bounce-in\',\'big-bounce\');void resultEl.offsetWidth;if(action===\'equals\')resultEl.classList.add(\'big-bounce\');else resultEl.classList.add(\'bounce-in\');setTimeout(()=>resultEl.classList.remove(\'bounce-in\',\'big-bounce\'),600);}function triggerDisplayGlow(){display.classList.remove(\'glow-pulse\');void display.offsetWidth;display.classList.add(\'glow-pulse\');setTimeout(()=>display.classList.remove(\'glow-pulse\'),750);}function triggerDisplayShake(){resultEl.style.animation=\'none\';void resultEl.offsetWidth;resultEl.style.animation=\'btnShake 0.5s ease-in-out\';setTimeout(()=>resultEl.style.animation=\'\',550);}function triggerCardBounce(){calculator.classList.remove(\'card-bounce\');void calculator.offsetWidth;calculator.classList.add(\'card-bounce\');setTimeout(()=>calculator.classList.remove(\'card-bounce\'),650);}document.addEventListener(\'dblclick\',function(e){if(e.target.closest(\'.btn\'))e.preventDefault();},{passive:false});console.log(\'🍮 真·全屏果冻计算器已启动！\');})();<\/script></body></html>';
+
+  var FEIXIN_HTML = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0}html,body{width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:none}</style></head><body><iframe src="feixin.html"></iframe></body></html>';
+
+  var BROWSER_HTML = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>浏览器</title><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;overflow:hidden;font-family:sans-serif;background:#1e1e2e;color:white;}#t{display:flex;padding:8px;background:rgba(0,0,0,0.4);gap:6px;}#u{flex:1;padding:10px;border-radius:20px;border:1px solid rgba(255,255,255,0.3);background:rgba(0,0,0,0.4);color:white;font-size:0.9rem;outline:none;}button{padding:8px 12px;border-radius:20px;border:none;background:rgba(255,255,255,0.2);color:white;cursor:pointer;white-space:nowrap;}#f{flex:1;border:none;width:100%;background:white;}</style></head><body style="display:flex;flex-direction:column;height:100vh;"><div id="t"><button id="h">🏠</button><input type="text" id="u" placeholder="输入网址或搜索..." value="https://www.baidu.com"><button id="g">前往</button><button id="r">🔄</button></div><iframe id="f" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"></iframe><script>var f=document.getElementById("f");var u=document.getElementById("u");function n(url){if(!url)return;var fu=url.indexOf(".")>-1&&url.indexOf(" ")===-1?(url.indexOf("http")===0?url:"https://"+url):"https://www.baidu.com/s?wd="+encodeURIComponent(url);u.value=fu;f.src=fu;}document.getElementById("g").onclick=function(){n(u.value);};document.getElementById("r").onclick=function(){f.src=f.src;};document.getElementById("h").onclick=function(){n("https://www.baidu.com");};u.addEventListener("keypress",function(e){if(e.key==="Enter")n(u.value);});setTimeout(function(){n("https://www.baidu.com");},100);<\/script></body></html>';
+
+  var STORE_HTML = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>商店</title><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;overflow-y:auto;font-family:sans-serif;background:rgba(0,0,0,0.3);color:white;}.s{padding:20px;}h2{margin-bottom:16px;}.c{background:rgba(255,255,255,0.12);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,0.15);}.c .ic{font-size:2rem;}.c .in{flex:1;}.c .in strong{display:block;}.c .in .de{font-size:0.8rem;opacity:0.7;}.btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 18px;border-radius:20px;cursor:pointer;}.btn.ins{background:rgba(100,200,100,0.3);}input[type=file]{display:none;}</style></head><body><div class="s"><h2>🛒 应用商店</h2><div class="c"><span class="ic">📝</span><div class="in"><strong>记事本</strong><div class="de">简洁文本编辑器，自动保存</div></div><button class="btn" id="b1">安装</button></div><div class="c"><span class="ic">📂</span><div class="in"><strong>自定义应用</strong><div class="de">选择本地的HTML文件安装</div></div><button class="btn" id="b2">选择文件</button><input type="file" id="if" accept=".html,.htm"></div></div><script>document.getElementById("b1").onclick=function(){if(this.classList.contains("ins")){alert("已安装");return;}if(window.parent&&window.parent.installStoreApp){window.parent.installStoreApp("notepad");this.textContent="已安装";this.classList.add("ins");}};document.getElementById("b2").onclick=function(){document.getElementById("if").click();};document.getElementById("if").onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){if(window.parent&&window.parent.installCustomApp)window.parent.installCustomApp(f.name,ev.target.result);};r.readAsText(f);e.target.value="";};<\/script></body></html>';
+
+  var CLOCK_HTML = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>时钟</title><style>*{margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;display:flex;align-items:center;justify-content:center;font-family:monospace;color:white;}.t{font-size:5rem;font-weight:200;letter-spacing:4px;text-shadow:0 0 40px rgba(100,150,255,0.5);}.d{font-size:1.2rem;opacity:0.7;margin-top:12px;}.s{font-size:2rem;opacity:0.5;margin-top:8px;}</style></head><body><div style="text-align:center;"><div class="t" id="td">00:00</div><div class="s" id="sd">00</div><div class="d" id="dd">---</div></div><script>function u(){var n=new Date();document.getElementById("td").textContent=n.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false});document.getElementById("sd").textContent=n.getSeconds().toString().padStart(2,"0");document.getElementById("dd").textContent=n.toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"});}u();setInterval(u,1000);<\/script></body></html>';
+
+  var NOTEPAD_HTML = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>记事本</title><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;overflow:hidden;font-family:sans-serif;background:#1e1e2e;color:white;}.n{display:flex;flex-direction:column;height:100%;padding:16px;gap:8px;}textarea{flex:1;background:rgba(0,0,0,0.3);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:14px;font-size:1rem;resize:none;outline:none;}.t{display:flex;gap:8px;}button{background:rgba(255,255,255,0.2);border:none;color:white;padding:8px 16px;border-radius:20px;cursor:pointer;}</style></head><body><div class="n"><div class="t"><button id="s">💾 保存</button><button id="c">🗑 清空</button></div><textarea id="a" placeholder="在这里记录..."></textarea></div><script>var a=document.getElementById("a");var v=localStorage.getItem("apos_notepad");if(v)a.value=v;document.getElementById("s").onclick=function(){localStorage.setItem("apos_notepad",a.value);alert("已保存");};document.getElementById("c").onclick=function(){if(confirm("确定清空？")){a.value="";localStorage.removeItem("apos_notepad");}};a.oninput=function(){localStorage.setItem("apos_notepad",a.value);};<\/script></body></html>';
+
+  // 初始化桌面
+  var defaultApps = [
+    { id: 'clock', name: '时钟', type: 'clock', icon: '🕒', installTime: 2 }
+  ];
+  loadInstalledApps();
+  defaultApps.forEach(function(def) { if (!installedApps.has(def.id)) { installedApps.set(def.id, def); createDesktopIcon(def, null); } });
+  saveInstalledApps();
+  console.log('Apos 已启动');
+})();
+</script>
+</body>
+</html>
